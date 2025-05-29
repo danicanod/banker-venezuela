@@ -174,6 +174,6 @@ async function main() {
 }
 
 // Solo ejecutar si es llamado directamente
-if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   main().catch(console.error);
 }
