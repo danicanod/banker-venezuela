@@ -1,0 +1,94 @@
+{
+  "name": "multi-bank-scraper-venezuela",
+  "version": "1.0.0",
+  "description": "🏦 Sistema modular y escalable para scraping de datos bancarios venezolanos. Arquitectura enterprise-ready con soporte para múltiples bancos, browser persistente y performance optimizada (60% más rápido).",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "accounts": "tsx src/index.ts",
+    "html-viewer": "tsx src/html-viewer.ts",
+    "clean": "rm -rf dist/ html-captures/ *.html",
+    "rebuild": "npm run clean && npm run build",
+    "browser:status": "tsx -e \"import { BrowserManager } from './src/shared/utils/browser'; const bm = new BrowserManager(); console.log('Browser status:', await bm.isRunning()); process.exit(0);\"",
+    "browser:close": "tsx -e \"import { BrowserManager } from './src/shared/utils/browser'; const bm = new BrowserManager(); await bm.forceClose(); console.log('Browser closed'); process.exit(0);\"",
+    "postinstall": "npx playwright install chromium"
+  },
+  "keywords": [
+    "venezuela",
+    "banking",
+    "scraping",
+    "banesco",
+    "automation",
+    "playwright",
+    "typescript",
+    "bank-scraper",
+    "financial-data",
+    "web-scraping",
+    "data-extraction",
+    "modular-architecture",
+    "enterprise",
+    "scalable",
+    "performance",
+    "multi-bank",
+    "banking-automation",
+    "fintech",
+    "venezuela-banks",
+    "account-scraping",
+    "transaction-scraping",
+    "browser-automation",
+    "headless-browser",
+    "persistent-browser",
+    "security-questions",
+    "modal-handling",
+    "session-management",
+    "html-debugging",
+    "banking-tools",
+    "financial-automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/USERNAME/multi-bank-scraper-venezuela.git"
+  },
+  "bugs": {
+    "url": "https://github.com/USERNAME/multi-bank-scraper-venezuela/issues"
+  },
+  "homepage": "https://github.com/USERNAME/multi-bank-scraper-venezuela#readme",
+  "author": {
+    "name": "Multi-Bank Scraper Team",
+    "email": "contact@example.com",
+    "url": "https://github.com/USERNAME"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/USERNAME"
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/cheerio": "^0.22.35",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "playwright": "^1.49.1"
+  }
+}

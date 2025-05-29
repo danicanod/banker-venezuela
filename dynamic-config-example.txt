@@ -1,0 +1,35 @@
+# Ejemplo de configuración dinámica para preguntas de seguridad
+# Copia y pega estas líneas en tu archivo .env
+
+# Configuración básica (recomendada para comenzar):
+SECURITY_QUESTIONS=anime:TuAnimeFavorito,mascota:NombreDeTuMascota
+
+# Configuración avanzada con múltiples variaciones:
+SECURITY_QUESTIONS=anime:TuAnimeFavorito,ánime:TuAnimeFavorito,animé:TuAnimeFavorito,mascota:NombreDeTuMascota,pet:NombreDeTuMascota,primera mascota:NombreDeTuMascota
+
+# Ejemplos con tus preguntas específicas:
+SECURITY_QUESTIONS=anime:Naruto,mascota:Firulais
+
+# Configuración extendida para cubrir más variaciones:
+SECURITY_QUESTIONS=anime:Naruto,ánime:Naruto,animé:Naruto,favorito:Naruto,mascota:Firulais,pet:Firulais,primera:Firulais,nombre:Firulais
+
+# Si tienes más preguntas de seguridad configuradas, puedes agregar más palabras clave:
+SECURITY_QUESTIONS=anime:Respuesta1,mascota:Respuesta2,libro:Respuesta3,ciudad:Respuesta4,comida:Respuesta5
+
+# Palabras clave que el sistema buscará automáticamente:
+# - anime, ánime, animé (para preguntas sobre anime)
+# - mascota, pet, primera (para preguntas sobre mascotas)
+# - libro, lectura (para preguntas sobre libros)
+# - ciudad, lugar, nacimiento (para preguntas sobre lugares)
+# - comida, plato, favorito (para preguntas sobre comida)
+# - pelicula, film, cine (para preguntas sobre películas)
+
+# IMPORTANTE:
+# 1. El sistema normalizará automáticamente acentos y mayúsculas
+# 2. Buscará las palabras clave dentro del texto de las preguntas
+# 3. Si una pregunta contiene "anime", usará la respuesta asociada a "anime"
+# 4. Puedes tener múltiples palabras clave que apunten a la misma respuesta
+
+# Formato: keyword1:answer1,keyword2:answer2,keyword3:answer3
+# Sin espacios alrededor de los dos puntos (:)
+# Usa comas para separar pares keyword:answer 
