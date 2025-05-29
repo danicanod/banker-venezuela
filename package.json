@@ -1,5 +1,5 @@
 {
-  "name": "multi-bank-scraper-venezuela",
+  "name": "banker-venezuela",
   "version": "1.0.0",
   "description": "🏦 Sistema modular y escalable para scraping de datos bancarios venezolanos. Arquitectura enterprise-ready con soporte para múltiples bancos, browser persistente y performance optimizada (60% más rápido).",
   "main": "dist/index.js",
@@ -49,16 +49,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/USERNAME/multi-bank-scraper-venezuela.git"
+    "url": "git+https://github.com/danicanod/banker-venezuela.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/multi-bank-scraper-venezuela/issues"
+    "url": "https://github.com/danicanod/banker-venezuela/issues"
   },
-  "homepage": "https://github.com/USERNAME/multi-bank-scraper-venezuela#readme",
+  "homepage": "https://github.com/danicanod/banker-venezuela#readme",
   "author": {
-    "name": "Multi-Bank Scraper Team",
-    "email": "contact@example.com",
-    "url": "https://github.com/USERNAME"
+    "name": "Daniel Sanchez",
+    "email": "danicanod@gmail.com",
+    "url": "https://github.com/danicanod"
   },
   "license": "MIT",
   "engines": {
@@ -67,7 +67,7 @@
   },
   "funding": {
     "type": "github",
-    "url": "https://github.com/sponsors/USERNAME"
+    "url": "https://github.com/sponsors/danicanod"
   },
   "os": [
     "linux",
