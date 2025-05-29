@@ -167,13 +167,6 @@ class BrowserDaemon {
   }
 }
 
-// Iniciar daemon
-async function main() {
-  const daemon = new BrowserDaemon();
-  await daemon.start();
-}
-
-// Solo ejecutar si es llamado directamente
-if (require.main === module) {
-  main().catch(console.error);
-} 
+// Iniciar daemon directamente
+const daemon = new BrowserDaemon();
+daemon.start().catch(console.error); 

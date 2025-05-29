@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2024-12-20
+
+### 🧹 LIMPIEZA MASIVA Y OPTIMIZACIÓN
+- **ELIMINADOS**: 11 archivos de scripts experimentales y de debug
+- **MANTENIDOS**: Solo scripts estables y funcionales (16 archivos)
+- **OPTIMIZACIÓN**: package.json actualizado con comandos limpios
+- **DOCUMENTACIÓN**: SCRIPTS_GUIDE.md actualizado para reflejar solo scripts esenciales
+
+#### 📁 Archivos Eliminados (Scripts Experimentales/Debug):
+- `transactions-debug-steps.ts` - Debug detallado experimental
+- `transactions-quick-debug.ts` - Debug rápido temporal  
+- `transactions-visual-debug.ts` - Debug visual experimental
+- `debug-simple-flow.ts` - Flujo simple experimental
+- `debug-dna-flow.ts` - Debug flujo DNA experimental
+- `capture-portal.ts` - Captura experimental
+- `transactions-iframe.ts` - Versión iframe experimental
+- `transactions-step-by-step.ts` - Step-by-step experimental
+- `transactions-complete.ts` - Versión duplicada
+- `transactions-debug-html.ts` - Debug HTML experimental
+- `transactions-final.ts` - Versión final duplicada
+
+#### ✅ Scripts Mantenidos (Esenciales):
+- **Transacciones**: `transactions-direct.ts`, `transactions-final-working.ts`, `transactions-optimized.ts`, `transactions-fixed.ts`
+- **Velocidad**: `transactions-simple.ts`, `transactions-fast.ts`, `transactions-turbo.ts`
+- **Básico**: `scrape-transactions.ts`
+- **Configuración**: `setup-security.ts`
+- **Browser**: `browser-daemon.ts`, `browser-status.ts`, `browser-close.ts`
+- **Persistente**: `persistent-status.ts`, `persistent-close.ts`
+- **Testing**: `test-optimized-login.ts`
+- **Utilidades**: `cleanup.ts`
+
+#### 📋 Comandos NPM Actualizados:
+- **Eliminados**: 11 comandos obsoletos/experimentales
+- **Mantenidos**: 22 comandos esenciales y funcionales
+- **Reorganizados**: Estructura más limpia y mantenible
+
+### 🎯 **Estado Final**:
+- ✅ **0 scripts colgantes** - Todos tienen timeouts inteligentes
+- ✅ **22 comandos funcionales** - Sin comandos rotos
+- ✅ **Documentación actualizada** - Solo información relevante
+- ✅ **Proyecto limpio** - Sin archivos experimentales
+
 ## [2.0.0] - 2024-12-19
 
 ### 🎉 **Major Release - Consolidated & Optimized Edition**

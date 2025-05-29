@@ -302,3 +302,45 @@ Este proyecto es para fines educativos y automatización personal. Asegúrate de
 ---
 
 **🎯 Optimized Edition** - Sistema consolidado para máximo rendimiento y simplicidad 
+
+## 🚀 Scripts Disponibles
+
+### 🎯 **Transacciones (Recomendados)**
+```bash
+npm run transactions:direct    # ⭐ MÁS RECOMENDADO - Single browser, manejo inteligente
+npm run transactions:working   # Versión completa y detallada  
+npm run transactions:optimized # Máxima velocidad y rendimiento
+npm run transactions:fixed     # Versión corregida iframe/portal
+```
+
+### ⚡ **Transacciones por Velocidad** 
+```bash
+npm run transactions:simple    # Ultra-rápido, evita preguntas seguridad
+npm run transactions:fast      # Optimizado con sistema persistente
+npm run transactions:turbo     # Timeouts agresivos 5s (riesgoso)
+npm run transactions          # Script básico original
+```
+
+### 🛠️ **Configuración y Utilidades**
+```bash
+npm run setup:security        # Configurar preguntas de seguridad
+npm run cleanup               # Limpiar archivos temporales  
+npm run clean                 # Limpiar compilación
+```
+
+### 🌐 **Gestión de Browser**
+```bash
+npm run browser:status        # Ver estado navegadores
+npm run browser:close         # Cerrar navegadores huérfanos
+npm run daemon:start          # Daemon persistente (experimental)
+npm run daemon:stop           # Detener daemon
+```
+
+### 🧪 **Testing**
+```bash
+npm run test                  # Test login optimizado
+npm run test:debug            # Test con debug
+npm run test:production       # Test modo producción
+```
+
+> 📖 **Ver guía completa**: `SCRIPTS_GUIDE.md` para detalles de cada script 
