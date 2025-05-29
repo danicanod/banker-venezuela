@@ -17,6 +17,7 @@
     "test:complete": "tsx src/scripts/test-transactions-complete.ts",
     "test:network": "tsx src/scripts/test-network-analysis.ts",
     "test:extraction": "tsx src/scripts/test-only-extraction.ts",
+    "test:smart-timeouts": "tsx src/scripts/test-smart-timeouts.ts",
     "debug:transactions": "tsx src/scripts/debug-transactions.ts",
     "analyze:html": "tsx src/scripts/analyze-html-transactions.ts",
     "demo:logging": "tsx src/scripts/demo-strategic-logging.ts",

@@ -4,6 +4,7 @@ import { PersistentBrowserServer } from '../../../shared/utils/browser-server';
 import { HTMLSaver } from '../../../shared/utils/html-saver';
 import { SecurityQuestionsHandler } from './security-questions';
 import { StrategicLogger } from '../../../shared/utils/strategic-logger';
+import { SmartWaiter } from '../../../shared/utils/smart-waiter';
 
 export class BanescLogin {
   private browserServer: PersistentBrowserServer;
@@ -30,8 +31,8 @@ export class BanescLogin {
     this.logger.trace('Starting modal verification');
     
     try {
-      // Esperar un poco para que aparezcan los modales
-      await frame.waitForTimeout(500);
+      // Espera inteligente para que aparezcan los modales
+      await SmartWaiter.smartDelay(200, 'modal detection');
       
       const modalSelectors = [
         '.swal2-container',
@@ -76,7 +77,7 @@ export class BanescLogin {
                   if (button) {
                     this.logger.success(`Accepting active connection modal`, { button: btnSelector });
                     await button.click();
-                    await frame.waitForTimeout(1000);
+                    await SmartWaiter.smartDelay(500, 'modal action processing');
                     return true; // Retornar que se manejó el modal de conexión activa
                   }
                 } catch (e) {
@@ -102,7 +103,7 @@ export class BanescLogin {
                 if (button) {
                   this.logger.info(`Closing modal`, { button: btnSelector });
                   await button.click();
-                  await frame.waitForTimeout(500);
+                  await SmartWaiter.smartDelay(300, 'modal close processing');
                   return false; // Modal general cerrado
                 }
               } catch (e) {
@@ -121,39 +122,6 @@ export class BanescLogin {
     } catch (error) {
       this.logger.warn('Error checking modals', error);
       return false;
-    }
-  }
-
-  private async waitForElementWithSmartTimeout(frame: Frame, selector: string, description: string = '', maxTimeout = 10000): Promise<any> {
-    const operationId = this.logger.startOperation(`wait_element_${description || 'unknown'}`);
-    this.logger.trace(`Waiting for element: ${selector}`, { 
-      selector, 
-      description, 
-      timeout: maxTimeout 
-    });
-    
-    try {
-      // Esperar a que el DOM esté listo
-      await frame.waitForLoadState('domcontentloaded', { timeout: 5000 });
-      
-      // Esperar el elemento específico
-      const element = await frame.waitForSelector(selector, { 
-        timeout: maxTimeout,
-        state: 'visible'
-      });
-      
-      if (element) {
-        // Verificar que sea interactuable
-        await element.waitForElementState('stable', { timeout: 2000 });
-        this.logger.success(`Element found and stable: ${selector}`);
-        this.logger.endOperation(operationId);
-        return element;
-      }
-      
-    } catch (error) {
-      this.logger.error(`Element not found: ${selector}`, error);
-      this.logger.endOperation(operationId);
-      throw new Error(`Element ${selector} not found in ${maxTimeout}ms`);
     }
   }
 
@@ -179,7 +147,7 @@ export class BanescLogin {
       await this.browserServer.start();
       const page = await this.browserServer.newPage();
 
-      // PASO 1: Navegar a la página de login
+      // PASO 1: Navegar a la página de login con espera inteligente
       const navigationId = this.logger.startOperation('navigation');
       this.logger.info('Navigating to Login.aspx');
       
@@ -188,61 +156,59 @@ export class BanescLogin {
         timeout: 15000 
       });
       
-      // Esperar a que el iframe esté disponible
-      await page.waitForSelector('iframe#ctl00_cp_frmAplicacion', { timeout: 10000 });
-      await this.htmlSaver.saveHTML(page, 'login-step1-container.html');
-      this.logger.endOperation(navigationId);
-
-      // PASO 2: Acceder al iframe
-      this.logger.info('Accessing iframe');
-      const iframeElement = await page.waitForSelector('iframe#ctl00_cp_frmAplicacion', { 
-        timeout: 10000,
-        state: 'attached'
+      // Esperar inteligente a que el iframe esté disponible
+      const frame = await SmartWaiter.waitForIframeReady(page, 'iframe#ctl00_cp_frmAplicacion', {
+        description: 'login iframe'
       });
       
-      const frame = await iframeElement.contentFrame();
-      if (!frame) {
-        throw new Error('No se pudo acceder al iframe');
-      }
-      
-      await frame.waitForLoadState('domcontentloaded');
+      await this.htmlSaver.saveHTML(page, 'login-step1-container.html');
       await this.htmlSaver.saveFrameHTML(frame, 'login-step2-iframe.html');
+      this.logger.endOperation(navigationId);
 
       await this.handleModals(frame);
 
-      // PASO 3: Llenar usuario
+      // PASO 2: Llenar usuario con espera inteligente
       const usernameId = this.logger.startOperation('username_input');
       this.logger.info('Step 1: Filling username');
       
-      const usernameInput = await this.waitForElementWithSmartTimeout(frame, 'input[name="txtUsuario"]', 'usuario');
+      const usernameInput = await SmartWaiter.waitForElementReady(frame, 'input[name="txtUsuario"]', {
+        description: 'username input'
+      });
+      
       await usernameInput.fill(this.credentials.username);
-      await frame.waitForTimeout(300); // Tiempo mínimo para que se registre el cambio
+      await SmartWaiter.smartDelay(200, 'username registration');
       await this.htmlSaver.saveFrameHTML(frame, 'login-step3-username-filled.html');
       this.logger.endOperation(usernameId);
 
-      // PASO 4: Enviar usuario
+      // PASO 3: Enviar usuario con manejo inteligente
       this.logger.info('Submitting username');
       try {
-        const submitButton = await this.waitForElementWithSmartTimeout(frame, 'input[name="bAceptar"]', 'botón de envío');
+        const submitButton = await SmartWaiter.waitForElementReady(frame, 'input[name="bAceptar"]', {
+          description: 'submit button'
+        });
         await submitButton.click();
       } catch (e) {
-        this.logger.info('Using JavaScript');
+        this.logger.info('Using JavaScript submit fallback');
         await frame.evaluate(() => {
           const form = document.querySelector('form');
           if (form) form.submit();
         });
       }
       
-      await frame.waitForTimeout(2000);
+      // Esperar a que la página procese la entrada del usuario
+      await SmartWaiter.waitForDOMReady(frame, { 
+        timeout: 8000, 
+        description: 'after username submission' 
+      });
+      
       await this.htmlSaver.saveFrameHTML(frame, 'login-step4-after-username.html');
       const activeConnectionDetected = await this.handleModals(frame);
 
-      // Si se detectó modal de conexión activa, esperar y reintentar
+      // Si se detectó modal de conexión activa, manejar re-entrada
       if (activeConnectionDetected) {
-        this.logger.info('Active connection handled, waiting before continuing');
-        await frame.waitForTimeout(3000); // Esperar 3 segundos antes de continuar
+        this.logger.info('Active connection handled, re-checking username field');
         
-        // Verificar si necesitamos reintroducir el usuario
+        // Verificar si necesitamos reintroducir el usuario con espera inteligente
         try {
           const userField = await frame.$('input[name="txtUsuario"]');
           if (userField) {
@@ -250,12 +216,17 @@ export class BanescLogin {
             if (!userValue || userValue !== this.credentials.username) {
               this.logger.info('Re-filling username after modal');
               await userField.fill(this.credentials.username);
-              await frame.waitForTimeout(500);
+              await SmartWaiter.smartDelay(200, 'username re-registration');
               
               // Reenviar
-              const submitButton = await this.waitForElementWithSmartTimeout(frame, 'input[name="bAceptar"]', 'botón de envío');
+              const submitButton = await SmartWaiter.waitForElementReady(frame, 'input[name="bAceptar"]', {
+                description: 'submit button retry'
+              });
               await submitButton.click();
-              await frame.waitForTimeout(2000);
+              await SmartWaiter.waitForDOMReady(frame, { 
+                timeout: 6000, 
+                description: 'after username retry' 
+              });
               await this.htmlSaver.saveFrameHTML(frame, 'login-step4b-after-retry.html');
             }
           }
@@ -264,12 +235,17 @@ export class BanescLogin {
         }
       }
 
-      // PASO 5: Verificar y manejar preguntas de seguridad
+      // PASO 4: Verificar y manejar preguntas de seguridad con esperas inteligentes
       this.logger.info('Step 2: Verifying security questions');
       
       let securityQuestionsHandled = false;
       try {
-        const firstQuestionLabel = await frame.$('#lblPrimeraP');
+        // Esperar a que aparezcan las preguntas de seguridad si existen
+        const firstQuestionLabel = await frame.waitForSelector('#lblPrimeraP', { 
+          timeout: 5000,
+          state: 'visible' 
+        }).catch(() => null);
+        
         if (firstQuestionLabel) {
           this.logger.info('Security questions found, answering');
           securityQuestionsHandled = await this.securityHandler.handleSecurityQuestions(frame);
@@ -277,12 +253,17 @@ export class BanescLogin {
           if (securityQuestionsHandled) {
             await this.htmlSaver.saveFrameHTML(frame, 'login-step5-security-filled.html');
             
-            // Enviar respuestas de seguridad
+            // Enviar respuestas de seguridad con espera inteligente
             this.logger.info('Submitting security answers');
-            const securitySubmit = await this.waitForElementWithSmartTimeout(frame, 'input[name="bAceptar"]', 'botón de envío');
+            const securitySubmit = await SmartWaiter.waitForElementReady(frame, 'input[name="bAceptar"]', {
+              description: 'security submit button'
+            });
             await securitySubmit.click();
             
-            await frame.waitForTimeout(2000);
+            await SmartWaiter.waitForDOMReady(frame, { 
+              timeout: 8000, 
+              description: 'after security submission' 
+            });
             await this.htmlSaver.saveFrameHTML(frame, 'login-step6-after-security.html');
             await this.handleModals(frame);
 
@@ -290,7 +271,7 @@ export class BanescLogin {
             this.logger.info('Verifying if we are in the banking area after questions');
             
             try {
-              await page.waitForTimeout(2000);
+              await SmartWaiter.smartDelay(1000, 'banking area verification');
               const currentUrl = page.url();
               const pageTitle = await page.title();
               const pageContent = await page.content();
@@ -328,7 +309,7 @@ export class BanescLogin {
         this.logger.info('Error finding security questions, continuing');
       }
 
-      // PASO 6: Buscar y llenar campo de clave (solo si no estamos ya autenticados)
+      // PASO 5: Buscar y llenar campo de clave con esperas inteligentes
       this.logger.info('Step 3: Finding password field');
       
       let passwordHandled = false;
@@ -341,18 +322,27 @@ export class BanescLogin {
       
       for (const selector of passwordSelectors) {
         try {
-          const passwordInput = await this.waitForElementWithSmartTimeout(frame, selector, 'contraseña');
+          const passwordInput = await SmartWaiter.waitForElementReady(frame, selector, {
+            timeout: 5000,
+            description: 'password field'
+          });
+          
           this.logger.info(`Password field found: ${selector}`);
           this.logger.info('Filling password');
           await passwordInput.fill(this.credentials.password);
-          await frame.waitForTimeout(300);
+          await SmartWaiter.smartDelay(200, 'password registration');
           await this.htmlSaver.saveFrameHTML(frame, 'login-step7-password-filled.html');
           
-          // Buscar botón de envío
-          const passwordSubmit = await this.waitForElementWithSmartTimeout(frame, 'input[type="submit"], input[name="bAceptar"], button[type="submit"]', 'botón de envío');
+          // Buscar botón de envío con espera inteligente
+          const passwordSubmit = await SmartWaiter.waitForElementReady(frame, 'input[type="submit"], input[name="bAceptar"], button[type="submit"]', {
+            description: 'password submit button'
+          });
           await passwordSubmit.click();
           
-          await frame.waitForTimeout(2000);
+          await SmartWaiter.waitForDOMReady(frame, { 
+            timeout: 8000, 
+            description: 'after password submission' 
+          });
           await this.htmlSaver.saveFrameHTML(frame, 'login-step8-after-password.html');
           await this.handleModals(frame);
           
@@ -369,12 +359,15 @@ export class BanescLogin {
         this.logger.info('No password field found, checking if already authenticated');
       }
 
-      // PASO 7: Verificar que llegamos al área bancaria (página principal)
+      // PASO 6: Verificar que llegamos al área bancaria con espera inteligente
       this.logger.info('Step 4: Verifying banking area access');
       
       // Esperar a que se complete la navegación después del login
       try {
-        await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
+        await SmartWaiter.waitForDOMReady(page, { 
+          timeout: 10000, 
+          description: 'banking area load' 
+        });
       } catch (e) {
         this.logger.info('Timeout waiting for DOM, continuing');
       }
@@ -420,7 +413,7 @@ export class BanescLogin {
                 timeout: 10000 
               });
               
-              await page.waitForTimeout(2000);
+              await SmartWaiter.smartDelay(1000, 'index page verification');
               
               const newPageTitle = await page.title();
               const newPageContent = await page.content();

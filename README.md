@@ -170,8 +170,16 @@ export class NuevoBancoScraper implements BankScraper {
 ### Performance Optimizada
 - **Browser Persistente**: Reutilización de instancias de navegador
 - **Bloqueo Inteligente**: No carga recursos innecesarios (imágenes, fonts, analytics)
-- **Smart Timeouts**: Esperas basadas en DOM en lugar de timeouts fijos
-- **Resultado**: 60% más rápido (de ~38s a ~15s)
+- **Smart Timeouts** 🆕: Esperas basadas en eventos DOM reales, no timeouts fijos
+- **Detección Inteligente**: Elementos listos en 30-60ms vs 2-3 segundos
+- **Resultado**: **78% más rápido** (de ~38s a ~8.4s) con Smart Timeouts
+
+### Smart Waiting System 🆕
+- **Esperas Inteligentes**: `waitForElementReady()` con detección de estabilidad
+- **DOM Monitoring**: `waitForDOMReady()` adaptativo según contexto
+- **Form Ready Detection**: `waitForFormReady()` para formularios complejos
+- **Iframe Integration**: `waitForIframeReady()` con contenido verificado
+- **Adaptive Delays**: `smartDelay()` solo cuando es realmente necesario
 
 ### Sistema de Logging Estratégico 🆕
 - **Contextos Automáticos**: Se adapta según `NODE_ENV` (production, development, testing, debug)
@@ -193,6 +201,13 @@ NODE_ENV=production npm run test:extraction
 
 # Test con máximo detalle
 DEBUG=true npm run test:extraction
+
+# Test de Smart Timeouts optimizados 🆕
+npm run test:smart-timeouts
+
+# Comparación de performance
+NODE_ENV=production npm run test:smart-timeouts  # Logs mínimos
+DEBUG=true npm run test:smart-timeouts          # Análisis completo
 ```
 
 #### Contextos Automáticos
