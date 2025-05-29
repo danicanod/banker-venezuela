@@ -115,4 +115,11 @@ jspm_packages/
 *.tgz
 
 # Yarn Integrity file
-.yarn-integrity 
+.yarn-integrity
+
+# PRIVATE FILES - Marketing and Strategy
+LAUNCH_STRATEGY.md
+MARKETING_NOTES.md
+PRIVATE_*
+*_PRIVATE.*
+launch-*.md 
