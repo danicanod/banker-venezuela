@@ -173,6 +173,43 @@ export class NuevoBancoScraper implements BankScraper {
 - **Smart Timeouts**: Esperas basadas en DOM en lugar de timeouts fijos
 - **Resultado**: 60% más rápido (de ~38s a ~15s)
 
+### Sistema de Logging Estratégico 🆕
+- **Contextos Automáticos**: Se adapta según `NODE_ENV` (production, development, testing, debug)
+- **Niveles Inteligentes**: 6 niveles (SILENT, ERROR, WARN, INFO, DEBUG, TRACE)
+- **Performance Monitoring**: Fitness functions automáticas para evaluar rendimiento
+- **Logs Adaptativos**: Mínimos en producción, completos en desarrollo
+- **Fitness Scoring**: Evaluación automática 0-100% con códigos de color
+
+#### Comandos de Logging
+```bash
+# Demostración completa del sistema
+npm run demo:logging
+
+# Versión mínima (solo errores y advertencias)
+npm run demo:minimal
+
+# Test real con logs mínimos
+NODE_ENV=production npm run test:extraction
+
+# Test con máximo detalle
+DEBUG=true npm run test:extraction
+```
+
+#### Contextos Automáticos
+- **PRODUCTION**: Solo errores y advertencias críticas
+- **DEVELOPMENT**: Información general y errores
+- **TESTING**: Logs enfocados en validación
+- **DEBUG**: Máximo detalle para troubleshooting
+
+#### Fitness Functions
+```typescript
+// Ejemplo de uso
+const logger = StrategicLogger.getInstance().createComponentLogger('BancoScraper');
+const operationId = logger.startOperation('login');
+// ... hacer operación ...
+logger.endOperation(operationId); // Evaluación automática de fitness
+```
+
 ### Robustez
 - **Manejo de Modales**: Detección automática de popups de "conexión activa"
 - **Reintentos Inteligentes**: Lógica de retry para casos comunes

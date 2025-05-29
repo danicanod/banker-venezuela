@@ -41,6 +41,8 @@ export interface ScrapingResult<T> {
   data?: T[];
   error?: string;
   timestamp?: Date;
+  message?: string;
+  metadata?: any;
 }
 
 export interface BrowserConfig {

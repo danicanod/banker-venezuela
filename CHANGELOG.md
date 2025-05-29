@@ -15,6 +15,150 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests coverage
 - CI/CD pipeline with GitHub Actions
 
+## [1.1.0] - 2025-05-29
+
+### 🎯 **Strategic Logging System**
+
+Esta versión introduce un sistema de logging estratégico avanzado con fitness functions y adaptación automática de contexto.
+
+### ✨ **Added**
+
+#### 🧠 **Sistema de Logging Inteligente**
+- **StrategicLogger**: Sistema singleton con adaptación automática de contexto
+- **6 Niveles de Log**: SILENT(0), ERROR(1), WARN(2), INFO(3), DEBUG(4), TRACE(5)
+- **4 Contextos Automáticos**: PRODUCTION, DEVELOPMENT, TESTING, DEBUG
+- **Detección Automática**: Basada en `NODE_ENV`, `DEBUG`, `TEST_MODE`
+- **Colores y Emojis**: Interfaz visual intuitiva con timestamps
+
+#### ⚡ **Performance Monitoring & Fitness Functions**
+- **Operaciones Medidas**: `startOperation()` / `endOperation()` con timing automático
+- **Fitness Evaluation**: Evaluación automática de performance vs thresholds
+- **Memory Tracking**: Monitoreo de uso de memoria en tiempo real
+- **Scoring System**: Puntuación 0-100% con códigos de color (verde≥80%, amarillo≥60%, rojo<60%)
+- **Thresholds Configurables**: Por tipo de operación (login: 15s, navigation: 10s, extraction: 5s)
+
+#### 🎭 **Contextos Adaptativos**
+- **PRODUCTION**: Solo errores y advertencias críticas, sin stack traces por seguridad
+- **DEVELOPMENT**: Información general con datos estructurados opcionales
+- **TESTING**: Logs enfocados en validación y testing
+- **DEBUG**: Máximo detalle incluyendo traces y datos completos
+
+#### 🔧 **Component Integration**
+- **BanescLogin**: Migrado completamente al sistema estratégico
+- **TransactionsScraper**: Integrado con performance monitoring
+- **AccountsScraper**: Compatible con el nuevo sistema
+- **Component Loggers**: Instancias específicas por componente
+
+#### 📊 **Demo Scripts & Tools**
+- **demo-strategic-logging.ts**: Demostración completa de todas las características
+- **demo-minimal-logging.ts**: Versión mínima (production mode)
+- **demo-performance-real.ts**: Fitness functions en escenarios reales
+- **cleanup.ts**: Herramienta de mantenimiento automático del proyecto
+
+### 🚀 **Enhanced Scripts**
+
+#### Nuevos Comandos NPM
+```bash
+npm run demo:logging        # Demostración completa del sistema
+npm run demo:minimal        # Versión mínima (solo errores/warns)
+npm run cleanup             # Limpieza automática del proyecto
+
+# Variantes de testing con diferentes niveles
+NODE_ENV=production npm run test:extraction    # Logs mínimos
+DEBUG=true npm run test:extraction            # Logs máximos
+LOG_LEVEL=trace npm run test:extraction       # Nivel específico
+```
+
+#### Variables de Entorno
+- **NODE_ENV**: Determina contexto automático (production/development)
+- **DEBUG=true**: Fuerza contexto debug con máximo detalle
+- **TEST_MODE=true**: Activa contexto de testing
+- **LOG_LEVEL**: Override manual del nivel de logging
+
+### 🎯 **Real-World Testing**
+
+#### Performance Validation
+- **Login Operations**: Evaluación automática vs 15s threshold
+- **Navigation Speed**: Monitoreo vs 10s threshold  
+- **Data Extraction**: Análisis vs 5s threshold
+- **Memory Efficiency**: Tracking vs 100MB threshold
+
+#### Production Readiness
+- **Minimal Footprint**: Solo errores y advertencias en producción
+- **Security First**: Stack traces ocultos en production
+- **Developer Friendly**: Información completa en desarrollo
+- **Actionable Feedback**: Fitness scores guían optimizaciones
+
+### 🔧 **Technical Implementation**
+
+#### Architecture Patterns
+- **Singleton Pattern**: Una instancia global del logger
+- **Factory Pattern**: Component loggers específicos
+- **Strategy Pattern**: Diferentes estrategias por contexto
+- **Observer Pattern**: Automatic context detection
+
+#### Code Quality
+- **TypeScript Strict**: Tipos completos para todas las interfaces
+- **Error Handling**: Graceful handling de edge cases
+- **Memory Management**: Automatic cleanup de performance metrics
+- **Thread Safety**: Safe para operaciones concurrentes
+
+### 📋 **Updated Documentation**
+
+#### Enhanced README
+- Sección completa sobre Strategic Logging System
+- Ejemplos de uso y configuración
+- Comandos de demostración
+- Contextos y niveles explicados
+
+#### Scripts Documentation  
+- **src/scripts/README.md**: Documentación completa de todos los scripts
+- Guías de uso para cada herramienta
+- Ejemplos de comandos con diferentes contextos
+- Troubleshooting y mejores prácticas
+
+### 🎉 **Benefits Delivered**
+
+#### For Developers
+- 🔍 **Debugging**: Información detallada cuando la necesitas
+- ⚡ **Performance**: Identificación automática de cuellos de botella
+- 🎯 **Focus**: Solo información relevante según el contexto
+- 🛠️ **Tools**: Scripts de demo y testing listos para usar
+
+#### For Operations
+- 📊 **Monitoring**: Fitness functions para evaluación continua
+- 🚨 **Alerting**: Solo errores críticos en producción
+- 📈 **Optimization**: Guidance clara sobre qué optimizar
+- 🔒 **Security**: Información sensible protegida en producción
+
+#### For the Project
+- 🏗️ **Maintainability**: Logging consistente across components
+- 📊 **Observability**: Visibilidad completa del sistema
+- 🔄 **Scalability**: Sistema preparado para más componentes
+- 🎯 **Quality**: Feedback automático sobre performance
+
+### 🚀 **Migration Guide**
+
+#### From v1.0.0
+- Los componentes existentes mantienen compatibilidad
+- Logging anterior sigue funcionando
+- Nuevos componentes pueden adoptar StrategicLogger gradualmente
+- Variables de entorno opcionales para control granular
+
+#### Recommended Setup
+```typescript
+// Nuevo enfoque recomendado
+import { StrategicLogger } from '../shared/utils/strategic-logger';
+const logger = StrategicLogger.getInstance().createComponentLogger('MiComponente');
+
+// Uso en operaciones críticas
+const operationId = logger.startOperation('operacion_critica');
+// ... lógica de negocio ...
+logger.endOperation(operationId); // Evaluación automática
+```
+
+---
+
 ## [1.0.0] - 2024-01-XX
 
 ### 🎉 Initial Release
@@ -111,58 +255,4 @@ npm run browser:close  # Cerrar browser forzadamente
 - `ScrapingResult<T>` - Wrapper para resultados de scraping
 
 #### Utilidades Compartidas
-- `BrowserManager` - Gestión de instancias de browser
-- `HTMLSaver` - Guardado de HTML para debugging
-- `SecurityQuestionsHandler` - Manejo de preguntas de seguridad
-
-### 📊 **Testing y Quality Assurance**
-
-#### Testing Manual Completo
-- ✅ Login flow end-to-end
-- ✅ Manejo de modales y reconexiones
-- ✅ Extracción de datos de cuentas
-- ✅ Performance bajo diferentes condiciones
-- ✅ Error handling y recovery
-
-#### Debugging Tools
-- HTML captures en cada paso crítico
-- Logging detallado con contexto
-- Performance metrics integrados
-- Browser state inspection tools
-
-### 🚀 **Migration from Previous Versions**
-
-Esta versión representa una reescritura completa del sistema anterior:
-
-#### Cambios Arquitecturales
-- **Antes**: Monolítico, específico para Banesco
-- **Ahora**: Modular, multi-banco, escalable
-
-#### Mejoras de Performance  
-- **Antes**: ~38 segundos por ejecución
-- **Ahora**: ~15 segundos (60% mejora)
-
-#### Robustez
-- **Antes**: Manejo básico de errores
-- **Ahora**: Error handling comprehensivo con recovery
-
-### 🎯 **Roadmap Ejecutado**
-
-- [x] ✅ Arquitectura modular multi-banco
-- [x] ✅ Soporte completo Banesco
-- [x] ✅ Optimizaciones de performance
-- [x] ✅ Browser persistente
-- [x] ✅ Manejo robusto de modales
-- [x] ✅ TypeScript migration completa
-- [x] ✅ Documentación comprehensiva
-- [x] ✅ Developer tooling
-
-### 💝 **Acknowledgments**
-
-Gracias a la comunidad de desarrolladores venezolanos que han contribuido con feedback, testing y mejoras al proyecto.
-
----
-
-## [0.x.x] - Development Versions
-
-Las versiones de desarrollo previas (0.x.x) fueron prototipos y no están documentadas en este changelog. La versión 1.0.0 representa la primera versión estable y production-ready del proyecto. 
+- `

@@ -1,26 +1,33 @@
 import { Page, Frame } from 'playwright';
 import { BanescCredentials, LoginResult } from '../types/index';
-import { BrowserManager } from '../../../shared/utils/browser';
+import { PersistentBrowserServer } from '../../../shared/utils/browser-server';
 import { HTMLSaver } from '../../../shared/utils/html-saver';
 import { SecurityQuestionsHandler } from './security-questions';
+import { StrategicLogger } from '../../../shared/utils/strategic-logger';
 
 export class BanescLogin {
-  private browserManager: BrowserManager;
+  private browserServer: PersistentBrowserServer;
   private htmlSaver: HTMLSaver;
   private securityHandler: SecurityQuestionsHandler;
   private credentials: BanescCredentials;
   private authenticatedPage: Page | null = null;
   private isLoggedIn: boolean = false;
+  private logger = StrategicLogger.getInstance().createComponentLogger('BanescLogin');
 
   constructor(credentials: BanescCredentials, headless: boolean = false) {
     this.credentials = credentials;
-    this.browserManager = new BrowserManager({ headless });
+    this.browserServer = PersistentBrowserServer.getInstance({ headless });
     this.htmlSaver = new HTMLSaver();
     this.securityHandler = new SecurityQuestionsHandler(credentials.securityQuestions);
+    
+    this.logger.debug('BanescLogin instance created', { 
+      username: credentials.username.substring(0, 3) + '***',
+      headless 
+    });
   }
 
   private async handleModals(frame: Frame): Promise<boolean> {
-    console.log('🔍 Verificando modales...');
+    this.logger.trace('Starting modal verification');
     
     try {
       // Esperar un poco para que aparezcan los modales
@@ -41,15 +48,17 @@ export class BanescLogin {
           const modal = await frame.$(selector);
           if (modal) {
             const modalText = await modal.textContent() || '';
-            console.log(`⚠️  Modal encontrado: ${selector}`);
-            console.log(`📄 Contenido: ${modalText.substring(0, 100)}...`);
+            this.logger.info(`Modal detected: ${selector}`, {
+              selector,
+              content: modalText.substring(0, 100) + '...'
+            });
             
             // DETECTAR MODAL DE CONEXIÓN ACTIVA
             if (modalText.includes('conexión activa') || 
                 modalText.includes('Hemos detectado que existe una conexión activa') ||
                 modalText.includes('acceda a la Banca por internet nuevamente')) {
               
-              console.log('🔄 Modal de conexión activa detectado - Presionando Aceptar...');
+              this.logger.warn('Active connection modal detected - accepting');
               
               const acceptButtons = [
                 'button:has-text("Aceptar")',
@@ -65,7 +74,7 @@ export class BanescLogin {
                 try {
                   const button = await frame.$(btnSelector);
                   if (button) {
-                    console.log(`✅ Presionando Aceptar: ${btnSelector}`);
+                    this.logger.success(`Accepting active connection modal`, { button: btnSelector });
                     await button.click();
                     await frame.waitForTimeout(1000);
                     return true; // Retornar que se manejó el modal de conexión activa
@@ -91,7 +100,7 @@ export class BanescLogin {
               try {
                 const button = await frame.$(btnSelector);
                 if (button) {
-                  console.log(`✅ Cerrando modal con: ${btnSelector}`);
+                  this.logger.info(`Closing modal`, { button: btnSelector });
                   await button.click();
                   await frame.waitForTimeout(500);
                   return false; // Modal general cerrado
@@ -106,17 +115,22 @@ export class BanescLogin {
         }
       }
       
-      console.log('ℹ️  No se encontraron modales activos');
+      this.logger.trace('No active modals found');
       return false;
       
     } catch (error) {
-      console.log('⚠️  Error verificando modales:', error);
+      this.logger.warn('Error checking modals', error);
       return false;
     }
   }
 
   private async waitForElementWithSmartTimeout(frame: Frame, selector: string, description: string = '', maxTimeout = 10000): Promise<any> {
-    console.log(`⏳ Esperando elemento: ${selector} ${description ? `(${description})` : ''}`);
+    const operationId = this.logger.startOperation(`wait_element_${description || 'unknown'}`);
+    this.logger.trace(`Waiting for element: ${selector}`, { 
+      selector, 
+      description, 
+      timeout: maxTimeout 
+    });
     
     try {
       // Esperar a que el DOM esté listo
@@ -131,20 +145,25 @@ export class BanescLogin {
       if (element) {
         // Verificar que sea interactuable
         await element.waitForElementState('stable', { timeout: 2000 });
-        console.log(`✅ Elemento encontrado y estable: ${selector}`);
+        this.logger.success(`Element found and stable: ${selector}`);
+        this.logger.endOperation(operationId);
         return element;
       }
       
     } catch (error) {
-      console.log(`⚠️  Elemento no encontrado: ${selector} - ${error}`);
-      throw new Error(`Elemento ${selector} no encontrado en ${maxTimeout}ms`);
+      this.logger.error(`Element not found: ${selector}`, error);
+      this.logger.endOperation(operationId);
+      throw new Error(`Element ${selector} not found in ${maxTimeout}ms`);
     }
   }
 
   async login(): Promise<LoginResult> {
+    const loginOperationId = this.logger.startOperation('login');
+    
     // Si ya estamos logueados, no hacer login de nuevo
     if (this.isLoggedIn && this.authenticatedPage) {
-      console.log('✅ Ya hay una sesión activa, reutilizando...');
+      this.logger.info('Active session found, reusing');
+      this.logger.endOperation(loginOperationId);
       return {
         success: true,
         message: 'Sesión activa reutilizada',
@@ -152,15 +171,18 @@ export class BanescLogin {
       };
     }
 
-    console.log('🚀 Iniciando proceso de login a Banesco...');
-    console.log(`👤 Usuario: ${this.credentials.username.substring(0, 2)}***`);
+    this.logger.info('Starting Banesco login process', { 
+      username: this.credentials.username.substring(0, 2) + '***' 
+    });
 
     try {
-      await this.browserManager.launch();
-      const page = await this.browserManager.newPage();
+      await this.browserServer.start();
+      const page = await this.browserServer.newPage();
 
       // PASO 1: Navegar a la página de login
-      console.log('🌐 Navegando a Login.aspx...');
+      const navigationId = this.logger.startOperation('navigation');
+      this.logger.info('Navigating to Login.aspx');
+      
       await page.goto('https://www.banesconline.com/mantis/Website/Login.aspx', { 
         waitUntil: 'domcontentloaded',
         timeout: 15000 
@@ -169,9 +191,10 @@ export class BanescLogin {
       // Esperar a que el iframe esté disponible
       await page.waitForSelector('iframe#ctl00_cp_frmAplicacion', { timeout: 10000 });
       await this.htmlSaver.saveHTML(page, 'login-step1-container.html');
+      this.logger.endOperation(navigationId);
 
       // PASO 2: Acceder al iframe
-      console.log('🔎 Accediendo al iframe...');
+      this.logger.info('Accessing iframe');
       const iframeElement = await page.waitForSelector('iframe#ctl00_cp_frmAplicacion', { 
         timeout: 10000,
         state: 'attached'
@@ -188,19 +211,22 @@ export class BanescLogin {
       await this.handleModals(frame);
 
       // PASO 3: Llenar usuario
-      console.log('👤 Paso 1: Llenando usuario...');
+      const usernameId = this.logger.startOperation('username_input');
+      this.logger.info('Step 1: Filling username');
+      
       const usernameInput = await this.waitForElementWithSmartTimeout(frame, 'input[name="txtUsuario"]', 'usuario');
       await usernameInput.fill(this.credentials.username);
       await frame.waitForTimeout(300); // Tiempo mínimo para que se registre el cambio
       await this.htmlSaver.saveFrameHTML(frame, 'login-step3-username-filled.html');
+      this.logger.endOperation(usernameId);
 
       // PASO 4: Enviar usuario
-      console.log('📤 Enviando usuario...');
+      this.logger.info('Submitting username');
       try {
         const submitButton = await this.waitForElementWithSmartTimeout(frame, 'input[name="bAceptar"]', 'botón de envío');
         await submitButton.click();
       } catch (e) {
-        console.log('🔄 Usando JavaScript...');
+        this.logger.info('Using JavaScript');
         await frame.evaluate(() => {
           const form = document.querySelector('form');
           if (form) form.submit();
@@ -213,7 +239,7 @@ export class BanescLogin {
 
       // Si se detectó modal de conexión activa, esperar y reintentar
       if (activeConnectionDetected) {
-        console.log('🔄 Modal de conexión activa manejado, esperando antes de continuar...');
+        this.logger.info('Active connection handled, waiting before continuing');
         await frame.waitForTimeout(3000); // Esperar 3 segundos antes de continuar
         
         // Verificar si necesitamos reintroducir el usuario
@@ -222,7 +248,7 @@ export class BanescLogin {
           if (userField) {
             const userValue = await userField.inputValue();
             if (!userValue || userValue !== this.credentials.username) {
-              console.log('🔄 Rellenando usuario después del modal...');
+              this.logger.info('Re-filling username after modal');
               await userField.fill(this.credentials.username);
               await frame.waitForTimeout(500);
               
@@ -234,25 +260,25 @@ export class BanescLogin {
             }
           }
         } catch (e) {
-          console.log('ℹ️  No fue necesario rellenar usuario después del modal');
+          this.logger.info('No need to re-fill username after modal');
         }
       }
 
       // PASO 5: Verificar y manejar preguntas de seguridad
-      console.log('🔍 Paso 2: Verificando preguntas de seguridad...');
+      this.logger.info('Step 2: Verifying security questions');
       
       let securityQuestionsHandled = false;
       try {
         const firstQuestionLabel = await frame.$('#lblPrimeraP');
         if (firstQuestionLabel) {
-          console.log('🔐 Encontradas preguntas de seguridad, respondiendo...');
+          this.logger.info('Security questions found, answering');
           securityQuestionsHandled = await this.securityHandler.handleSecurityQuestions(frame);
           
           if (securityQuestionsHandled) {
             await this.htmlSaver.saveFrameHTML(frame, 'login-step5-security-filled.html');
             
             // Enviar respuestas de seguridad
-            console.log('📤 Enviando respuestas de seguridad...');
+            this.logger.info('Submitting security answers');
             const securitySubmit = await this.waitForElementWithSmartTimeout(frame, 'input[name="bAceptar"]', 'botón de envío');
             await securitySubmit.click();
             
@@ -261,7 +287,7 @@ export class BanescLogin {
             await this.handleModals(frame);
 
             // VERIFICAR SI YA ESTAMOS EN EL ÁREA BANCARIA DESPUÉS DE LAS PREGUNTAS
-            console.log('🔍 Verificando si ya estamos en el área bancaria después de las preguntas...');
+            this.logger.info('Verifying if we are in the banking area after questions');
             
             try {
               await page.waitForTimeout(2000);
@@ -269,21 +295,22 @@ export class BanescLogin {
               const pageTitle = await page.title();
               const pageContent = await page.content();
               
-              console.log(`🔗 URL después de preguntas: ${currentUrl}`);
-              console.log(`📄 Título después de preguntas: ${pageTitle}`);
+              this.logger.info('URL after questions', { url: currentUrl });
+              this.logger.info('Title after questions', { title: pageTitle });
               
               // Si ya estamos en una página de Banesco que no es login, hemos terminado
               if (pageContent.includes('Banesco') && !pageContent.includes('Login') && 
                   (currentUrl.includes('index.aspx') || currentUrl.includes('default.aspx') || 
                    pageTitle.includes('BanescOnline') || pageContent.includes('Bienvenido'))) {
                 
-                console.log(`✅ ¡Ya estamos en el área bancaria después de las preguntas!`);
+                this.logger.info('We are in the banking area after questions');
                 await this.htmlSaver.saveHTML(page, 'login-SUCCESS-after-security.html');
                 
                 // Guardar la página autenticada
                 this.authenticatedPage = page;
                 this.isLoggedIn = true;
                 
+                this.logger.endOperation(loginOperationId);
                 return {
                   success: true,
                   message: 'Login exitoso - Acceso directo después de preguntas de seguridad',
@@ -291,18 +318,18 @@ export class BanescLogin {
                 };
               }
             } catch (e) {
-              console.log('ℹ️  Error verificando área bancaria después de preguntas, continuando...');
+              this.logger.info('Error verifying banking area after questions, continuing');
             }
           }
         } else {
-          console.log('ℹ️  No se encontraron preguntas de seguridad en este paso');
+          this.logger.info('No security questions found in this step');
         }
       } catch (e) {
-        console.log('ℹ️  Error buscando preguntas de seguridad, continuando...');
+        this.logger.info('Error finding security questions, continuing');
       }
 
       // PASO 6: Buscar y llenar campo de clave (solo si no estamos ya autenticados)
-      console.log('🔍 Paso 3: Buscando campo de clave...');
+      this.logger.info('Step 3: Finding password field');
       
       let passwordHandled = false;
       const passwordSelectors = [
@@ -315,8 +342,8 @@ export class BanescLogin {
       for (const selector of passwordSelectors) {
         try {
           const passwordInput = await this.waitForElementWithSmartTimeout(frame, selector, 'contraseña');
-          console.log(`🔒 Campo de clave encontrado: ${selector}`);
-          console.log('🔒 Llenando contraseña...');
+          this.logger.info(`Password field found: ${selector}`);
+          this.logger.info('Filling password');
           await passwordInput.fill(this.credentials.password);
           await frame.waitForTimeout(300);
           await this.htmlSaver.saveFrameHTML(frame, 'login-step7-password-filled.html');
@@ -339,17 +366,17 @@ export class BanescLogin {
 
       // Si no se encontró campo de clave, puede que ya estemos autenticados
       if (!passwordHandled) {
-        console.log('ℹ️  No se encontró campo de contraseña, verificando si ya estamos autenticados...');
+        this.logger.info('No password field found, checking if already authenticated');
       }
 
       // PASO 7: Verificar que llegamos al área bancaria (página principal)
-      console.log('🏦 Paso 4: Verificando acceso al área bancaria...');
+      this.logger.info('Step 4: Verifying banking area access');
       
       // Esperar a que se complete la navegación después del login
       try {
         await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
       } catch (e) {
-        console.log('ℹ️  Timeout esperando DOM, continuando...');
+        this.logger.info('Timeout waiting for DOM, continuing');
       }
       
       try {
@@ -358,18 +385,19 @@ export class BanescLogin {
         const pageTitle = await page.title();
         const pageContent = await page.content();
         
-        console.log(`🔗 URL actual: ${currentUrl}`);
-        console.log(`📄 Título actual: ${pageTitle}`);
+        this.logger.info('Current URL', { url: currentUrl });
+        this.logger.info('Current title', { title: pageTitle });
         
         // Verificar si estamos en una página de Banesco y no en login
         if (pageContent.includes('Banesco') && !pageContent.includes('Login')) {
-          console.log(`✅ ¡Login exitoso! Ya estamos en el área bancaria`);
+          this.logger.info('Login successful! We are in the banking area');
           await this.htmlSaver.saveHTML(page, 'login-SUCCESS-area-bancaria.html');
           
           // Guardar la página autenticada
           this.authenticatedPage = page;
           this.isLoggedIn = true;
           
+          this.logger.endOperation(loginOperationId);
           return {
             success: true,
             message: 'Login exitoso - Acceso completo al área bancaria',
@@ -377,7 +405,7 @@ export class BanescLogin {
           };
         } else {
           // Si no estamos en el área bancaria, intentar navegar al index
-          console.log('⚠️  No se detectó área bancaria, intentando navegar...');
+          this.logger.info('No banking area detected, trying to navigate');
           
           const indexUrls = [
             'https://www.banesconline.com/Mantis/WebSite/index.aspx',
@@ -386,7 +414,7 @@ export class BanescLogin {
           
           for (const url of indexUrls) {
             try {
-              console.log(`🔗 Intentando: ${url}`);
+              this.logger.info(`Trying: ${url}`);
               await page.goto(url, { 
                 waitUntil: 'networkidle',
                 timeout: 10000 
@@ -398,14 +426,15 @@ export class BanescLogin {
               const newPageContent = await page.content();
               
               if (newPageContent.includes('Banesco') && !newPageContent.includes('Login')) {
-                console.log(`✅ ¡Login exitoso! Accedido a: ${url}`);
-                console.log(`📄 Título: ${newPageTitle}`);
+                this.logger.info(`Login successful! Accessed: ${url}`);
+                this.logger.info('Title', { title: newPageTitle });
                 await this.htmlSaver.saveHTML(page, 'login-SUCCESS-index-banco.html');
                 
                 // Guardar la página autenticada
                 this.authenticatedPage = page;
                 this.isLoggedIn = true;
                 
+                this.logger.endOperation(loginOperationId);
                 return {
                   success: true,
                   message: 'Login exitoso - Acceso completo al área bancaria',
@@ -414,15 +443,16 @@ export class BanescLogin {
               }
               
             } catch (e: any) {
-              console.log(`❌ Error con ${url}: ${e.message || e}`);
+              this.logger.error(`Error with ${url}: ${e.message || e}`);
             }
           }
         }
         
       } catch (e: any) {
-        console.log(`❌ Error verificando área bancaria: ${e.message || e}`);
+        this.logger.error('Error verifying banking area', e.message || e);
       }
 
+      this.logger.endOperation(loginOperationId);
       return {
         success: false,
         message: 'Login parcial - No se pudo verificar acceso completo',
@@ -430,7 +460,8 @@ export class BanescLogin {
       };
 
     } catch (error: any) {
-      console.error('❌ Error en el proceso de login:', error);
+      this.logger.error('Error in login process', error);
+      this.logger.endOperation(loginOperationId);
       return {
         success: false,
         message: `Error durante el login: ${error.message || error}`,
@@ -442,7 +473,7 @@ export class BanescLogin {
   async getAuthenticatedPage(): Promise<Page | null> {
     // Si ya tenemos una página autenticada, devolverla
     if (this.isLoggedIn && this.authenticatedPage) {
-      console.log('✅ Retornando página ya autenticada');
+      this.logger.info('Returning already authenticated page');
       return this.authenticatedPage;
     }
     
@@ -459,7 +490,7 @@ export class BanescLogin {
   async close(): Promise<void> {
     this.isLoggedIn = false;
     this.authenticatedPage = null;
-    await this.browserManager.close();
+    await this.browserServer.close();
   }
 
   // Método para verificar si hay sesión activa
