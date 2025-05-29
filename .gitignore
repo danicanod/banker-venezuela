@@ -122,4 +122,7 @@ LAUNCH_STRATEGY.md
 MARKETING_NOTES.md
 PRIVATE_*
 *_PRIVATE.*
-launch-*.md 
+launch-*.md
+
+# Sessions directory (contains sensitive session data)
+.sessions/ 

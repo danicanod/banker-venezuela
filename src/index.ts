@@ -1,13 +1,13 @@
 import { config } from 'dotenv';
-import { BanescLogin } from './banks/banesco/auth/login';
+import { OptimizedLogin } from './banks/banesco/auth/optimized-login';
 import { AccountsScraper } from './banks/banesco/scrapers/accounts';
 import { TransactionsScraper } from './banks/banesco/scrapers/transactions';
-import { BanescCredentials, Transaction } from './banks/banesco/types/index';
+import { BanescCredentials } from './banks/banesco/types/index';
 
 config();
 
 export class BanescScraper {
-  private login: BanescLogin;
+  private login: OptimizedLogin;
   private accountsScraper: AccountsScraper;
   private transactionsScraper: TransactionsScraper;
 
@@ -31,18 +31,18 @@ export class BanescScraper {
       securityQuestions
     };
 
-    this.login = new BanescLogin(credentials, headless);
+    this.login = new OptimizedLogin(credentials, headless);
     this.accountsScraper = new AccountsScraper();
     this.transactionsScraper = new TransactionsScraper();
   }
 
   async scrapeAllData() {
-    console.log('🚀 INICIANDO SCRAPER COMPLETO DE BANESCO');
-    console.log('==========================================');
+    console.log('🚀 BANESCO SCRAPER OPTIMIZADO');
+    console.log('=============================');
 
     try {
-      // PASO 1: Autenticación
-      console.log('\n🔐 PASO 1: Autenticación...');
+      // PASO 1: Autenticación optimizada con session persistence
+      console.log('\n🔐 PASO 1: Autenticación optimizada...');
       const loginResult = await this.login.login();
       
       if (!loginResult.success) {
@@ -54,6 +54,9 @@ export class BanescScraper {
       }
 
       console.log('✅ Autenticación exitosa!');
+      if (loginResult.message.includes('restaurada')) {
+        console.log('🚀 Session restaurada - ¡login instantáneo!');
+      }
 
       // PASO 2: Obtener página autenticada
       console.log('\n📄 PASO 2: Obteniendo página autenticada...');
@@ -82,50 +85,58 @@ export class BanescScraper {
         }
       }
 
-      // PASO 4: Intentar acceder a transacciones de la primera cuenta
-      console.log('\n💳 PASO 4: Extrayendo transacciones...');
+      // PASO 4: Navegación a transacciones con sistema optimizado
+      console.log('\n🧭 PASO 4: Navegando a transacciones...');
+      const navigationSuccess = await this.accountsScraper.navigateToAccountDetails(page);
       
-      // Intentar hacer clic en el primer enlace de cuenta
-      const clickedTransactionLink = await this.transactionsScraper.clickFirstTransactionLink(page);
-      
-      if (clickedTransactionLink) {
-        console.log('✅ Navegación a transacciones exitosa');
-      } else {
-        console.log('⚠️  No se pudo navegar automáticamente a transacciones');
-      }
-
-      // Hacer scraping de transacciones en la página actual
-      const transactionsResult = await this.transactionsScraper.scrapeTransactions(page);
-      
-      if (!transactionsResult.success) {
-        console.error('❌ Error en scraping de transacciones:', transactionsResult.error);
-      } else {
-        console.log(`✅ Transacciones encontradas: ${transactionsResult.data?.length || 0}`);
-        if (transactionsResult.data && transactionsResult.data.length > 0) {
-          console.log('\n📊 TRANSACCIONES RECIENTES:');
-          transactionsResult.data.slice(0, 5).forEach((transaction, index) => {
-            console.log(`   ${index + 1}. ${transaction.date} - ${transaction.description}`);
-            const amountDisplay = transaction.type === 'credit' ? `+${transaction.amount}` : `-${transaction.amount}`;
-            console.log(`      ${amountDisplay} | Saldo: ${transaction.balance}`);
-          });
+      if (navigationSuccess) {
+        console.log('✅ Navegación exitosa');
+        
+        // PASO 5: Scraping de transacciones
+        console.log('\n💳 PASO 5: Extrayendo transacciones...');
+        const transactionsResult = await this.transactionsScraper.scrapeTransactions(page);
+        
+        if (!transactionsResult.success) {
+          console.error('❌ Error en scraping de transacciones:', transactionsResult.error);
+        } else {
+          console.log(`✅ Transacciones encontradas: ${transactionsResult.data?.length || 0}`);
+          if (transactionsResult.data && transactionsResult.data.length > 0) {
+            console.log('\n📊 TRANSACCIONES RECIENTES:');
+            transactionsResult.data.slice(0, 5).forEach((transaction, index) => {
+              console.log(`   ${index + 1}. ${transaction.date} - ${transaction.description}`);
+              const amountDisplay = transaction.type === 'credit' ? `+${transaction.amount}` : `-${transaction.amount}`;
+              console.log(`      ${amountDisplay} | Saldo: ${transaction.balance}`);
+            });
+          }
         }
+
+        // PASO 6: Resultado final
+        console.log('\n📈 RESUMEN FINAL:');
+        console.log('==================');
+        console.log(`🔐 Autenticación: ${loginResult.success ? '✅ Exitosa' : '❌ Fallida'}`);
+        console.log(`🏦 Cuentas: ${accountsResult.success ? `✅ ${accountsResult.data?.length || 0} encontradas` : '❌ Error'}`);
+        console.log(`💳 Transacciones: ${transactionsResult.success ? `✅ ${transactionsResult.data?.length || 0} encontradas` : '❌ Error'}`);
+
+        return {
+          success: true,
+          data: {
+            accounts: accountsResult.data || [],
+            transactions: transactionsResult.data || []
+          },
+          timestamp: new Date()
+        };
+      } else {
+        console.log('⚠️ No se pudo navegar a transacciones, solo se extrajeron cuentas');
+        
+        return {
+          success: true,
+          data: {
+            accounts: accountsResult.data || [],
+            transactions: []
+          },
+          timestamp: new Date()
+        };
       }
-
-      // PASO 5: Resultado final
-      console.log('\n📈 RESUMEN FINAL:');
-      console.log('==================');
-      console.log(`🔐 Autenticación: ${loginResult.success ? '✅ Exitosa' : '❌ Fallida'}`);
-      console.log(`🏦 Cuentas: ${accountsResult.success ? `✅ ${accountsResult.data?.length || 0} encontradas` : '❌ Error'}`);
-      console.log(`💳 Transacciones: ${transactionsResult.success ? `✅ ${transactionsResult.data?.length || 0} encontradas` : '❌ Error'}`);
-
-      return {
-        success: true,
-        data: {
-          accounts: accountsResult.data || [],
-          transactions: transactionsResult.data || []
-        },
-        timestamp: new Date()
-      };
 
     } catch (error: any) {
       console.error('❌ Error general en scraping:', error);
@@ -141,7 +152,7 @@ export class BanescScraper {
   }
 
   async scrapeAccountsOnly() {
-    console.log('🏦 SCRAPING SOLO DE CUENTAS');
+    console.log('🏦 SCRAPING OPTIMIZADO SOLO DE CUENTAS');
     
     try {
       const loginResult = await this.login.login();
@@ -165,7 +176,7 @@ export class BanescScraper {
   }
 
   async scrapeTransactionsOnly(accountUrl?: string) {
-    console.log('💳 SCRAPING SOLO DE TRANSACCIONES');
+    console.log('💳 SCRAPING OPTIMIZADO SOLO DE TRANSACCIONES');
     
     try {
       const loginResult = await this.login.login();
@@ -191,8 +202,8 @@ export class BanescScraper {
 
 // Función principal para ejecutar el scraper
 async function main() {
-  console.log('🎯 BANESCO SCRAPER - VERSIÓN ESTRUCTURADA');
-  console.log('==========================================\n');
+  console.log('🎯 BANESCO SCRAPER - VERSIÓN OPTIMIZADA');
+  console.log('=======================================\n');
 
   const scraper = new BanescScraper(false); // headless: false para desarrollo
   
@@ -200,14 +211,19 @@ async function main() {
   
   if (result.success) {
     console.log('\n🎉 ¡SCRAPING COMPLETADO EXITOSAMENTE!');
+    console.log('====================================');
+    console.log(`📊 Cuentas: ${result.data?.accounts.length || 0}`);
+    console.log(`📋 Transacciones: ${result.data?.transactions.length || 0}`);
   } else {
-    console.log('\n❌ SCRAPING FALLÓ:', result.error);
+    console.log('\n❌ Error en el scraping:', result.error);
   }
 }
 
-// Ejecutar si es llamado directamente
-if (require.main === module) {
-  main().catch(console.error);
-}
+// Ejecutar si es llamado directamente (simplificado)
+main().catch(console.error);
 
-export default BanescScraper;
+// Exportar clases principales
+export { OptimizedLogin } from './banks/banesco/auth/optimized-login';
+export { AccountsScraper } from './banks/banesco/scrapers/accounts';
+export { TransactionsScraper } from './banks/banesco/scrapers/transactions';
+export * from './banks/banesco/types/index';
