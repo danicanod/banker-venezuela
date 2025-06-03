@@ -15,7 +15,7 @@
 
 *Scraper eficiente con session persistence, smart timeouts y manejo inteligente de cookies*
 
-[Características](#-características-principales) • [Instalación](#-instalación) • [Uso](#-uso-rápido) • [API](#-api) • [Contribuir](#-contribución)
+[Características](#-características-principales) • [Instalación](#-instalación) • [Uso](#-uso-rápido) • [CLI](#-cli) • [API](#-api) • [Contribuir](#-contribución)
 
 </div>
 
@@ -81,19 +81,28 @@ SECURITY_QUESTIONS="anime:SNK,libro:Bible,color:azul"
 
 ## 📋 **Uso Rápido**
 
-### **Comandos Principales**
+### **Usando la nueva CLI**
+```bash
+# Ver información de cuentas
+banker bank accounts
+
+# Obtener movimientos de cuenta
+banker bank transactions
+
+# Método alternativo para transacciones (cuando el método principal falla)
+banker bank fix-transactions
+
+# Ver todos los comandos disponibles
+banker --help
+```
+
+### **Comandos Tradicionales**
 ```bash
 # Ejecutar scraper completo
-npm run accounts
+npm run start
 
-# Test del sistema optimizado
-npm run test
-
-# Test con máximo detalle para debug
-npm run test:debug
-
-# Test con logs mínimos (producción)
-npm run test:production
+# Probar login optimizado
+npm run dev
 ```
 
 ### **Salida Esperada**
@@ -116,6 +125,33 @@ npm run test:production
 ✅ Transacciones encontradas: 15
 
 🎉 ¡SCRAPING COMPLETADO EXITOSAMENTE!
+```
+
+## 💻 **CLI**
+
+El proyecto ahora incluye una CLI completa para manejar todas las operaciones. Ver [CLI.md](CLI.md) para documentación detallada.
+
+### **Comandos Principales**
+
+```bash
+# Operaciones bancarias
+banker bank accounts               # Ver cuentas
+banker bank transactions           # Ver transacciones
+banker bank transactions --days=7  # Últimos 7 días
+banker bank setup-security         # Configurar seguridad
+
+# Gestión del navegador
+banker browser status              # Ver estado
+banker browser close               # Cerrar navegador
+
+# Gestión del daemon
+banker daemon start                # Iniciar daemon
+banker daemon start --headless     # Iniciar sin UI
+banker daemon stop                 # Detener daemon
+
+# Utilidades
+banker utils clean                 # Limpiar archivos temporales
+banker utils html-viewer           # Ver capturas HTML
 ```
 
 ## 🔧 **API**
@@ -344,3 +380,200 @@ npm run test:production       # Test modo producción
 ```
 
 > 📖 **Ver guía completa**: `SCRIPTS_GUIDE.md` para detalles de cada script 
+
+## 🧪 **Solución de Problemas**
+
+Si experimentas problemas con la extracción de transacciones, prueba las siguientes soluciones:
+
+### **Método Alternativo**
+```bash
+# Usar método alternativo para acceder a transacciones
+banker bank fix-transactions
+
+# Método alternativo con manejo automático de preguntas de seguridad
+banker bank secure-transactions
+```
+
+### **Herramientas de Diagnóstico**
+```bash
+# Verificar conexión con el banco
+banker diagnostic network
+
+# Verificar certificado SSL
+banker diagnostic ssl
+
+# Verificar configuración del navegador
+banker diagnostic browser
+```
+
+### **Limpieza del Sistema**
+```bash
+# Limpiar archivos temporales
+banker utils clean
+
+# Limpiar sistema completo (sesiones, navegadores, archivos)
+banker utils cleanup
+```
+
+## ✨ **Nueva Funcionalidad: Extracción de Transacciones Banesco**
+
+**Extrae automáticamente las transacciones más recientes de tu cuenta Banesco** con detección inteligente de sistema no disponible.
+
+### 🚀 **Uso Rápido**
+
+```bash
+# 1. Configurar credenciales
+cp env.example .env
+# Editar .env con tus datos
+
+# 2. Extraer transacciones
+npm run extract
+```
+
+### 📊 **Resultado**
+- ✅ **Autenticación automática** con manejo de preguntas de seguridad
+- 🚫 **Detección de sistema no disponible** ("En estos momentos no podemos...")
+- 📈 **Últimas transacciones** con fecha, descripción, monto y saldo
+- 💾 **Archivo JSON** con todas las transacciones extraídas
+- 🎯 **Información de cuenta** (saldo actual, número de cuenta)
+
+### 🔧 **Uso Programático**
+
+```typescript
+import { extractBanescoTransactions } from './src/banesco/extract-transactions';
+
+const result = await extractBanescoTransactions({
+  headless: true,
+  limit: 20 // Últimas 20 transacciones
+});
+
+if (result.success) {
+  console.log(`Extraídas ${result.totalCount} transacciones`);
+  console.log(`Saldo actual: ${result.accountInfo?.balance}`);
+  result.transactions.forEach(tx => {
+    console.log(`${tx.date}: ${tx.description} - ${tx.amount}`);
+  });
+}
+```
+
+## 🔒 **Configuración**
+
+Crea un archivo `.env` con tus credenciales:
+
+```env
+BANESCO_USERNAME=tu_usuario
+BANESCO_PASSWORD=tu_contraseña
+SECURITY_QUESTIONS=palabra_clave1:respuesta1,palabra_clave2:respuesta2
+```
+
+### 🛡️ **Preguntas de Seguridad**
+
+El sistema mapea automáticamente las preguntas de seguridad usando palabras clave:
+
+```env
+# Ejemplos de configuración
+SECURITY_QUESTIONS=anime:Naruto,mascota:Firulais,novio:NombrePersona,conocio:CiudadNombre
+```
+
+## 🎯 **Características Principales**
+
+### ✅ **Sistema de Disponibilidad Inteligente**
+- **Detección automática** de mensajes "En estos momentos no podemos"
+- **Manejo de iframe CAU** con múltiples selectores
+- **Parada temprana** si el sistema no está disponible
+- **Mensajes claros** de estado del sistema
+
+### 🔐 **Autenticación Robusta**
+- **Session persistence** para evitar logins repetidos
+- **Mapeo dinámico** de preguntas de seguridad
+- **Manejo de errores** detallado con códigos específicos
+- **Timeouts inteligentes** sin bloqueos innecesarios
+
+### 📊 **Extracción de Transacciones**
+- **Análisis de tablas** automático para encontrar datos
+- **Procesamiento de múltiples formatos** de fecha y monto
+- **Extracción de metadatos** (saldos, números de cuenta)
+- **Manejo de paginación** para obtener más transacciones
+- **Validación de datos** y limpieza automática
+
+### 🚀 **Rendimiento Optimizado**
+- **Headless mode** para ejecución rápida en producción
+- **Smart waits** sin timeouts innecesarios
+- **Navegación inteligente** hacia páginas de movimientos
+- **Limpieza automática** de recursos del navegador
+
+## 📝 **Scripts Disponibles**
+
+```bash
+npm run extract        # Extraer transacciones de Banesco
+npm run dev           # Ejecutar CLI principal
+npm run build         # Compilar TypeScript
+npm run clean         # Limpiar archivos temporales
+```
+
+## 🔍 **Solución de Problemas**
+
+### Sistema No Disponible
+```
+🚫 Sistema Banesco no disponible
+📝 Mensaje: En estos momentos no podemos procesar su solicitud
+```
+**Solución**: El sistema detectó que Banesco está en mantenimiento. Reintenta en 15-30 minutos.
+
+### Error de Autenticación
+```
+❌ Error de autenticación
+📝 Credenciales incorrectas o preguntas de seguridad faltantes
+```
+**Solución**: 
+1. Verifica credenciales en `.env`
+2. Agrega respuestas para todas las preguntas de seguridad
+3. Verifica que las palabras clave coincidan con las preguntas
+
+### No Se Encontraron Transacciones
+```
+✅ Extracción exitosa pero 0 transacciones
+📝 No hay movimientos en el período seleccionado
+```
+**Solución**: Normal si no hay transacciones recientes. El sistema probó múltiples períodos automáticamente.
+
+## 🏗️ **Arquitectura**
+
+```
+src/banesco/
+├── auth/
+│   ├── banesco-auth.ts          # Clase principal de autenticación
+│   ├── security-handler.ts      # Manejo de preguntas de seguridad
+│   └── types.ts                 # Tipos TypeScript
+├── extract-transactions.ts      # 🆕 Extractor principal de transacciones
+└── README.md                   # Documentación específica
+
+src/banks/banesco/
+├── scrapers/
+│   ├── transactions.ts         # Scraper de transacciones
+│   └── accounts.ts            # Navegación a cuentas
+└── types/
+    └── index.ts               # Tipos de datos bancarios
+```
+
+## 🤝 **Contribuir**
+
+1. **Fork** el proyecto
+2. **Crea** una rama: `git checkout -b feature/nueva-funcionalidad`
+3. **Commit** cambios: `git commit -am 'Agregar nueva funcionalidad'`
+4. **Push** a la rama: `git push origin feature/nueva-funcionalidad`
+5. **Abre** un Pull Request
+
+## 📄 **Licencia**
+
+MIT © [Daniel Sanchez](https://github.com/danicanod)
+
+---
+
+## 🎯 **Próximas Funcionalidades**
+
+- 🏦 **Soporte para más bancos** (Banco de Venezuela, Mercantil)
+- 📱 **API REST** para integración con aplicaciones
+- 📊 **Dashboard web** para visualización de datos
+- 🔔 **Notificaciones** de nuevas transacciones
+- 💾 **Base de datos** para historial de transacciones 

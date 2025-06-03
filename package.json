@@ -4,37 +4,20 @@
   "description": "🏦 Sistema consolidado y optimizado para scraping de datos bancarios venezolanos. Session persistence, smart timeouts y manejo inteligente de cookies para máximo rendimiento.",
   "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "banker": "src/cli.ts"
+  },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "start": "tsx src/index.ts",
-    "accounts": "tsx src/index.ts",
-    "html-viewer": "tsx src/html-viewer.ts",
+    "dev": "tsx src/cli.ts",
+    "start": "tsx src/cli.ts",
     "clean": "rm -rf dist/ html-captures/ *.html",
-    "cleanup": "tsx src/scripts/cleanup.ts",
     "rebuild": "npm run clean && npm run build",
-    "browser:status": "tsx src/scripts/browser-status.ts",
-    "browser:close": "tsx src/scripts/browser-close.ts",
-    "test": "tsx src/scripts/test-optimized-login.ts",
-    "test:debug": "DEBUG=true tsx src/scripts/test-optimized-login.ts",
-    "test:production": "NODE_ENV=production tsx src/scripts/test-optimized-login.ts",
-    "transactions": "tsx src/scripts/scrape-transactions.ts",
-    "transactions:fast": "tsx src/scripts/transactions-fast.ts",
-    "transactions:simple": "tsx src/scripts/transactions-simple.ts",
-    "transactions:direct": "tsx src/scripts/transactions-direct.ts",
-    "transactions:turbo": "tsx src/scripts/transactions-turbo.ts",
-    "transactions:working": "tsx src/scripts/transactions-final-working.ts",
-    "transactions:optimized": "tsx src/scripts/transactions-optimized.ts",
-    "transactions:fixed": "tsx src/scripts/transactions-fixed.ts",
-    "setup:security": "tsx src/scripts/setup-security.ts",
-    "daemon:start": "tsx src/scripts/browser-daemon.ts",
-    "daemon:stop": "pkill -f 'tsx.*browser-daemon' || echo 'No daemon running'",
-    "daemon:status": "pgrep -f 'tsx.*browser-daemon' && echo 'Daemon is running' || echo 'Daemon is not running'",
-    "daemon:headless": "HEADLESS=true tsx src/scripts/browser-daemon.ts",
-    "persistent:status": "tsx src/scripts/persistent-status.ts",
-    "persistent:close": "tsx src/scripts/persistent-close.ts",
+    "install-cli": "tsx src/scripts/install-cli.ts",
     "prepublishOnly": "npm run build",
-    "postinstall": "npx playwright install chromium"
+    "postinstall": "npx playwright install chromium",
+    "extract": "tsx src/banesco/extract-transactions.ts",
+    "extract-final": "tsx src/banesco/extract-final.ts"
   },
   "keywords": [
     "venezuela",
@@ -101,6 +84,7 @@
     "arm64"
   ],
   "devDependencies": {
+    "@types/commander": "^2.12.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
     "tsx": "^4.19.4",
@@ -109,10 +93,16 @@
   "dependencies": {
     "@types/cheerio": "^0.22.35",
     "@types/jsdom": "^21.1.7",
+    "boxen": "^7.1.1",
+    "chalk": "^5.4.1",
     "cheerio": "^1.0.0",
-    "dotenv": "^16.4.7",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.0.0",
+    "dotenv": "^16.5.0",
     "express": "^4.21.2",
+    "figures": "^6.1.0",
     "jsdom": "^26.1.0",
+    "ora": "^8.2.0",
     "playwright": "^1.49.1"
   }
 }
