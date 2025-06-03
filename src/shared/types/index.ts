@@ -1,3 +1,9 @@
+/**
+ * Shared types for banking scrapers
+ */
+
+import { PERFORMANCE_PRESETS } from '../performance-config';
+
 // Shared types for all bank implementations
 export * from './base';
 
@@ -17,6 +23,17 @@ export interface BaseBankAuthConfig {
   timeout?: number;        // Default: 30000ms
   debug?: boolean;         // Default: false
   saveSession?: boolean;   // Default: true
+  // Performance optimization options
+  performancePreset?: keyof typeof PERFORMANCE_PRESETS;
+  performance?: {
+    blockCSS?: boolean;
+    blockImages?: boolean;
+    blockFonts?: boolean;
+    blockMedia?: boolean;
+    blockNonEssentialJS?: boolean;
+    blockAds?: boolean;
+    blockAnalytics?: boolean;
+  };
 }
 
 // Base authentication result interface

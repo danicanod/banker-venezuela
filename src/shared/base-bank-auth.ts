@@ -6,9 +6,16 @@
  * common configuration patterns.
  */
 
-import { Browser, Page, Frame, chromium } from 'playwright';
+import { Browser, Page, Frame, chromium, BrowserContext } from 'playwright';
 import type { BaseBankAuthConfig, BaseBankLoginResult, BaseBankCredentials } from './types';
 import { writeFileSync, appendFileSync, existsSync } from 'fs';
+import { 
+  PerformanceConfig, 
+  getBankPerformanceConfig, 
+  getBlockedDomains, 
+  isEssentialJS,
+  PERFORMANCE_PRESETS
+} from './performance-config';
 
 export abstract class BaseBankAuth<
   TCredentials extends BaseBankCredentials,
@@ -17,11 +24,13 @@ export abstract class BaseBankAuth<
 > {
   protected browser: Browser | null = null;
   protected page: Page | null = null;
+  protected context: BrowserContext | null = null;
   protected credentials: TCredentials;
   protected config: Required<TConfig>;
   protected isAuthenticated: boolean = false;
   protected logFile: string;
   protected bankName: string;
+  protected performanceConfig: PerformanceConfig;
 
   constructor(bankName: string, credentials: TCredentials, config: TConfig) {
     this.bankName = bankName;
@@ -30,11 +39,28 @@ export abstract class BaseBankAuth<
     // Set up default configuration - subclasses can override specific defaults
     this.config = this.getDefaultConfig(config);
     
+    // Get optimized performance configuration for this bank's auth flow
+    this.performanceConfig = getBankPerformanceConfig(
+      bankName, 
+      'auth',
+      (config as any).performancePreset
+    );
+    
+    // Allow custom performance overrides
+    if ((config as any).performance) {
+      this.performanceConfig = { 
+        ...this.performanceConfig,
+        ...(config as any).performance 
+      };
+    }
+    
     // Setup log file
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    this.logFile = `debug-${bankName.toLowerCase()}-${timestamp}.log`;
+    const userIdentifier = this.getUserIdentifier();
+    this.logFile = `debug-${bankName.toLowerCase()}-${userIdentifier}-${timestamp}.log`;
     
     this.log(`🏦 ${bankName} Auth initialized for user: ${this.getUserIdentifier()}***`);
+    this.log(`⚡ Performance config: CSS:${this.performanceConfig.blockCSS}, IMG:${this.performanceConfig.blockImages}, JS:${this.performanceConfig.blockNonEssentialJS}`);
     
     if (this.config.debug) {
       this.log('🐛 Debug mode enabled - Playwright debugger will pause at key points');
@@ -222,23 +248,107 @@ export abstract class BaseBankAuth<
   }
 
   /**
-   * Initialize Playwright browser and page with standardized settings
+   * Setup request interception for performance optimizations
+   */
+  protected async setupRequestInterception(page: Page): Promise<void> {
+    this.log('⚡ Setting up performance optimizations...');
+    
+    const blockedDomains = getBlockedDomains(this.performanceConfig);
+    
+    await page.route('**/*', async (route) => {
+      const request = route.request();
+      const url = request.url();
+      const resourceType = request.resourceType();
+      
+      // Check if URL contains blocked domains
+      const shouldBlockDomain = blockedDomains.some(domain => url.includes(domain));
+      
+      if (shouldBlockDomain) {
+        this.log(`🚫 Blocked tracking/ads: ${url.substring(0, 60)}...`);
+        await route.abort();
+        return;
+      }
+      
+      // Block by resource type
+      if (this.performanceConfig.blockCSS && resourceType === 'stylesheet') {
+        this.log(`🚫 Blocked CSS: ${url.substring(0, 60)}...`);
+        await route.abort();
+        return;
+      }
+      
+      if (this.performanceConfig.blockImages && resourceType === 'image') {
+        this.log(`🚫 Blocked image: ${url.substring(0, 60)}...`);
+        await route.abort();
+        return;
+      }
+      
+      if (this.performanceConfig.blockFonts && resourceType === 'font') {
+        this.log(`🚫 Blocked font: ${url.substring(0, 60)}...`);
+        await route.abort();
+        return;
+      }
+      
+      if (this.performanceConfig.blockMedia && (resourceType === 'media' || resourceType === 'websocket')) {
+        this.log(`🚫 Blocked media: ${url.substring(0, 60)}...`);
+        await route.abort();
+        return;
+      }
+      
+      // Block non-essential JavaScript using intelligent detection
+      if (this.performanceConfig.blockNonEssentialJS && resourceType === 'script') {
+        if (!isEssentialJS(url, this.bankName)) {
+          this.log(`🚫 Blocked non-essential JS: ${url.substring(0, 60)}...`);
+          await route.abort();
+          return;
+        }
+      }
+      
+      // Allow the request
+      await route.continue();
+    });
+    
+    this.log(`✅ Performance optimizations active - ${blockedDomains.length} domains blocked`);
+  }
+
+  /**
+   * Initialize Playwright browser and page with performance optimizations
    */
   protected async initializeBrowser(): Promise<void> {
-    this.log('🌐 Initializing browser...');
+    this.log('🌐 Initializing optimized browser...');
     
+    const launchArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox', 
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      // Performance optimizations
+      '--disable-extensions',
+      '--disable-plugins',
+      '--disable-default-apps',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-features=TranslateUI,BlinkGenPropertyTrees',
+      '--disable-ipc-flooding-protection'
+    ];
+    
+    // Add additional performance args if in headless mode
+    if (this.config.headless) {
+      launchArgs.push(
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--run-all-compositor-stages-before-draw',
+        '--disable-blink-features=AutomationControlled'
+      );
+    }
+
     this.browser = await chromium.launch({
       headless: this.config.headless,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu'
-      ]
+      args: launchArgs
     });
 
-    const context = await this.browser.newContext({
+    this.context = await this.browser.newContext({
       viewport: { width: 1366, height: 768 },
       userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       extraHTTPHeaders: {
@@ -247,19 +357,37 @@ export abstract class BaseBankAuth<
         'Accept-Encoding': 'gzip, deflate, br',
         'DNT': '1',
         'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
-      }
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      // Performance: disable images, CSS, fonts if configured
+      // Note: This approach is less granular but very effective
+      ...(this.performanceConfig.blockImages && this.performanceConfig.blockCSS ? {
+        javaScriptEnabled: true, // Keep JS for functionality
+        // Block resources at context level for maximum performance
+      } : {})
     });
 
-    this.page = await context.newPage();
+    this.page = await this.context.newPage();
     
-    // Set default timeout
+    // Setup request interception for fine-grained control
+    await this.setupRequestInterception(this.page);
+    
+    // Disable unnecessary features for performance
+    await this.page.setExtraHTTPHeaders({
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    });
+    
+    // Set aggressive timeouts for faster failure
     this.page.setDefaultTimeout(this.config.timeout || 30000);
+    this.page.setDefaultNavigationTimeout(this.config.timeout || 30000);
     
     if (this.config.debug) {
-      this.log('🐛 Browser initialized in debug mode');
+      this.log('🐛 Optimized browser initialized in debug mode');
       this.log(`📱 Viewport: 1366x768, Headless: ${this.config.headless}`);
       this.log(`⏱️  Timeout: ${this.config.timeout}ms`);
+      this.log(`⚡ Performance optimizations: ${JSON.stringify(this.performanceConfig)}`);
       this.log(`📄 Log file: ${this.logFile}`);
     }
   }
@@ -408,13 +536,18 @@ export abstract class BaseBankAuth<
         this.page = null;
       }
       
+      if (this.context) {
+        await this.context.close();
+        this.context = null;
+      }
+      
       if (this.browser) {
         await this.browser.close();
         this.browser = null;
       }
       
       this.isAuthenticated = false;
-      this.log('🧹 Browser resources cleaned up');
+      this.log('🧹 Optimized browser resources cleaned up');
       this.log(`📄 Debug session log saved to: ${this.logFile}`);
       
     } catch (error) {

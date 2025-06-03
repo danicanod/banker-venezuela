@@ -9,12 +9,16 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/cli.ts",
+    "dev": "npx ts-node src/index.ts",
+    "test": "npx ts-node src/banks/banesco/auth/test-optimized-login.ts",
+    "test:performance": "npx ts-node src/scripts/test-performance.ts",
+    "test:performance:demo": "npx ts-node src/scripts/test-performance.ts demo",
+    "performance:examples": "npx ts-node src/shared/examples/performance-optimization.ts",
+    "type-check": "tsc --noEmit",
     "start": "tsx src/cli.ts",
     "clean": "rm -rf dist/ html-captures/ *.html",
     "rebuild": "npm run clean && npm run build",
     "install-cli": "tsx src/scripts/install-cli.ts",
-    "prepublishOnly": "npm run build",
     "postinstall": "npx playwright install chromium",
     "extract": "tsx src/banesco/extract-transactions.ts",
     "extract-final": "tsx src/banesco/extract-final.ts"

@@ -3,7 +3,7 @@
  * 
  * This abstract class provides common functionality for all bank scraper
  * implementations, including navigation, element waiting, logging, data extraction,
- * and common scraping patterns.
+ * and common scraping patterns with performance optimizations.
  */
 
 import { Page } from 'playwright';
@@ -16,6 +16,15 @@ export interface BaseBankScrapingConfig {
   waitBetweenActions?: number;  // Default: 1000ms
   retries?: number;        // Default: 3
   saveHtml?: boolean;      // Default: false
+  performance?: {          // Performance optimization settings
+    blockCSS?: boolean;
+    blockImages?: boolean;
+    blockFonts?: boolean;
+    blockMedia?: boolean;
+    blockNonEssentialJS?: boolean;
+    blockAds?: boolean;
+    blockAnalytics?: boolean;
+  };
 }
 
 export abstract class BaseBankScraper<
@@ -37,7 +46,12 @@ export abstract class BaseBankScraper<
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     this.logFile = `${bankName.toLowerCase()}-scraper-${timestamp}.log`;
     
-    this.log(`🏦 ${bankName} Scraper initialized`);
+    this.log(`🏦 ${bankName} Scraper initialized with performance optimizations`);
+    
+    if ((this.config as any).performance) {
+      const perf = (this.config as any).performance;
+      this.log(`⚡ Scraper performance config: CSS:${perf.blockCSS}, IMG:${perf.blockImages}, JS:${perf.blockNonEssentialJS}`);
+    }
     
     if (this.config.debug) {
       this.log('🐛 Debug mode enabled - enhanced logging and pauses available');
@@ -55,6 +69,15 @@ export abstract class BaseBankScraper<
       waitBetweenActions: 1000,
       retries: 3,
       saveHtml: false,
+      performance: {
+        blockCSS: false,        // More conservative for scrapers
+        blockImages: true,      // Usually safe to block
+        blockFonts: true,       // Safe to block
+        blockMedia: true,       // Safe to block
+        blockNonEssentialJS: false, // Be careful with JS on scrapers
+        blockAds: true,         // Always safe to block
+        blockAnalytics: true    // Always safe to block
+      },
       ...config
     } as Required<TConfig>;
   }
