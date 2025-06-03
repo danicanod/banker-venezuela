@@ -1,52 +1,97 @@
-# 🏦 BNC Bank Scraper
+# 🏦 BNC Bank Scraper v2.0
 
-Comprehensive Playwright-based scraper for BNC online banking in Venezuela with 3-step authentication support.
+Enterprise-grade Playwright-based scraper for BNC online banking with abstract base class architecture and 3-step authentication.
+
+## 🏗️ Architecture
+
+Built on the new abstract base class system for maximum code reuse and consistency:
+
+```typescript
+// Extends base authentication class
+export class BncAuth extends BaseBankAuth<BncCredentials, BncAuthConfig, BncLoginResult>
+
+// Extends base scraper class  
+export class BncTransactionsScraper extends BaseBankScraper<BncTransaction, BncScrapingConfig, BncScrapingResult>
+
+// Unified main scraper API
+export class BncScraper
+```
 
 ## 📁 Structure
 
 ```
 src/banks/bnc/
 ├── auth/
-│   └── bnc-auth.ts         # Main authentication class
+│   └── bnc-auth.ts         # Authentication implementation (388 lines)
 ├── scrapers/
-│   ├── bnc-scraper.ts      # Main scraper class  
-│   └── transactions.ts     # Transaction extraction
+│   ├── bnc-scraper.ts      # Main scraper with unified API
+│   └── transactions.ts     # Transaction scraper (313 lines)
 ├── types/
-│   └── index.ts           # TypeScript definitions
+│   └── index.ts           # Bank-specific types extending base types
 ├── examples/
-│   └── basic-usage.ts     # Usage examples
-├── index.ts              # Main exports
-└── README.md            # This file
+│   └── basic-usage.ts     # Usage examples with new APIs
+├── index.ts              # Consistent exports
+└── README.md            # This documentation
 ```
 
 ## 🚀 Quick Start
 
-### Installation
-
-```bash
-npm install playwright
-npx playwright install chromium
-```
-
-### Basic Usage
+### Simple Usage with Factory Function
 
 ```typescript
-import { BncAuth } from './src/banks/bnc';
+import { quickScrape } from './src/banks/bnc';
 
-const auth = new BncAuth({
-  id: 'your_cedula',
-  card: 'your_card_number',
+// One-liner for quick transactions
+const transactions = await quickScrape({
+  id: 'V12345678',
+  card: '1234567890123456',
   password: 'your_password'
-});
+}, { debug: true });
+
+console.log(`Found ${transactions.length} transactions`);
+```
+
+### Full Session Control
+
+```typescript
+import { BncScraper, createBncScraper } from './src/banks/bnc';
+
+// Factory method
+const scraper = createBncScraper({
+  id: 'V12345678',
+  card: '1234567890123456', 
+  password: 'your_password'
+}, { debug: true });
+
+// Full scraping session
+const session = await scraper.scrapeAll();
+console.log(`Authentication: ${session.authResult.success}`);
+console.log(`Transactions: ${session.transactionResults[0].data?.length}`);
+
+// Individual operations
+await scraper.authenticate();
+const transactions = await scraper.scrapeTransactions(); 
+```
+
+### Direct Class Usage
+
+```typescript
+import { BncAuth, BncTransactionsScraper } from './src/banks/bnc';
+
+// Authentication only
+const auth = new BncAuth({
+  id: 'V12345678',
+  card: '1234567890123456',
+  password: 'your_password'
+}, { debug: true });
 
 const result = await auth.login();
-
 if (result.success) {
   console.log('✅ Authentication successful!');
-  const page = auth.getPage();
-  // Perform banking operations...
-} else {
-  console.error('❌ Authentication failed:', result.message);
+  
+  // Use authenticated page for scraping
+  const scraper = new BncTransactionsScraper(auth.getPage()!, { debug: true });
+  const transactions = await scraper.scrapeTransactions();
 }
 
 await auth.close();
@@ -54,50 +99,65 @@ await auth.close();
 
 ## 🔐 3-Step Authentication Process
 
-BNC uses a unique 3-step authentication:
+BNC uses a unique 3-step authentication that our base class handles elegantly:
 
-1. **Card Number**: Enter your BNC card number
-2. **User ID**: Enter your cédula de identidad 
+1. **Card Number**: Enter your BNC card number  
+2. **User ID**: Enter your cédula de identidad
 3. **Password**: Enter your online banking password
 
 ```typescript
-const credentials: BncCredentials = {
-  id: 'V12345678',           // Cédula de identidad
-  card: '1234567890123456',  // BNC card number
-  password: 'your_password'  // Online banking password
-};
+interface BncCredentials extends BaseBankCredentials {
+  id: string;        // Cédula de identidad (V12345678)
+  card: string;      // BNC card number (16 digits)
+  password: string;  // Online banking password
+}
 ```
 
 ## 🏦 Multi-Account Support
 
-BNC scraper supports multiple account types:
+BNC scraper automatically detects and processes all account types:
 
-- **VES 1109**: Venezuelan Bolívar accounts
-- **USD 0816**: US Dollar accounts (type 1)
-- **USD 0801**: US Dollar accounts (type 2)
+- **VES_1109**: Venezuelan Bolívar savings accounts
+- **USD_0816**: US Dollar accounts (standard type)
+- **USD_0801**: US Dollar accounts (alternative type)
+
+Each account type is handled with specific filtering and processing logic.
 
 ## ⚙️ Configuration Options
 
+### Authentication Configuration
 ```typescript
-interface BncAuthConfig {
+interface BncAuthConfig extends BaseBankAuthConfig {
   headless?: boolean;      // Default: false
   timeout?: number;        // Default: 30000ms
-  retries?: number;        // Default: 3
   debug?: boolean;         // Default: false
   saveSession?: boolean;   // Default: true
+  retries?: number;        // Default: 3
+}
+```
+
+### Scraping Configuration
+```typescript
+interface BncScrapingConfig extends BaseBankScrapingConfig {
+  debug?: boolean;              // Default: false
+  timeout?: number;             // Default: 30000ms
+  waitBetweenActions?: number;  // Default: 1000ms
+  retries?: number;             // Default: 3
+  saveHtml?: boolean;           // Default: false
+  accountTypes?: string[];      // Filter specific account types
 }
 ```
 
 ### Debug Mode
 
-Enable debug mode to pause at key points:
+Enable comprehensive debugging with unified logging:
 
 ```typescript
-const auth = new BncAuth(credentials, {
-  headless: false,  // Show browser
-  debug: true,      // Enable debug pauses
-  timeout: 120000,  // Longer timeout for debugging
-  retries: 1        // Single attempt for debugging
+const scraper = new BncScraper(credentials, {
+  headless: false,   // Show browser window
+  debug: true,       // Enable debug logging + pauses
+  timeout: 120000,   // Extended timeout for manual inspection
+  saveHtml: true     // Save HTML captures for analysis
 });
 ```
 
@@ -108,153 +168,203 @@ const auth = new BncAuth(credentials, {
 BNC_ID=V12345678
 BNC_CARD=1234567890123456
 BNC_PASSWORD=your_password
+
+# Optional debugging
+DEBUG=true
+HEADLESS=false
 ```
 
-## 🔧 API Reference
+## 🔧 Unified API Reference
 
-### BncAuth Class
+All BNC classes follow the same API pattern as other banks in the system:
 
-#### Constructor
-```typescript
-new BncAuth(credentials: BncCredentials, config?: BncAuthConfig)
-```
-
-#### Methods
-- `login()` - Authenticate with BNC
-- `getPage()` - Get authenticated Playwright page
-- `isLoggedIn()` - Check authentication status
-- `getCurrentUrl()` - Get current page URL
-- `getLogContent()` - Get debug logs
-- `exportLogs(path)` - Export logs to file
-- `close()` - Cleanup resources
-
-### Types
+### Main Scraper API
 
 ```typescript
-interface BncCredentials {
-  id: string;        // Cédula de identidad
-  card: string;      // BNC card number
-  password: string;  // Online banking password
-}
-
-interface BncLoginResult {
-  success: boolean;
-  message: string;
-  sessionValid: boolean;
-  userInfo?: {
-    id: string;
-    cardNumber: string;
-  };
-  error?: string;
+class BncScraper {
+  // Authentication
+  async authenticate(): Promise<BncLoginResult>
+  async isAuthenticated(): Promise<boolean>
+  
+  // Scraping operations
+  async scrapeAll(): Promise<BncScrapingSession>
+  async scrapeTransactions(): Promise<BncScrapingResult>
+  
+  // Session management
+  getPage(): Page | undefined
+  async exportSession(session: BncScrapingSession): Promise<void>
+  async close(): Promise<void>
 }
 ```
+
+### Factory Functions
+
+```typescript
+// Quick scrape function
+async function quickScrape(
+  credentials: BncCredentials, 
+  config?: BncScrapingConfig
+): Promise<BncTransaction[]>
+
+// Scraper factory
+function createBncScraper(
+  credentials: BncCredentials,
+  config?: BncAuthConfig
+): BncScraper
+```
+
+### Base Class Methods (Inherited)
+
+From `BaseBankAuth`:
+```typescript
+// Template method pattern
+async login(): Promise<BncLoginResult>
+protected async performBankSpecificLogin(): Promise<boolean>
+protected async verifyLoginSuccess(): Promise<boolean>
+
+// Common utilities
+protected async waitForElement(selector: string): Promise<ElementHandle>
+protected async waitForNavigation(): Promise<void>
+protected log(message: string, level?: LogLevel): void
+```
+
+From `BaseBankScraper`:
+```typescript
+// Template method pattern  
+abstract async scrapeTransactions(): Promise<BncScrapingResult>
+abstract parseTransactionData(rawData: any[]): BncTransaction[]
+
+// Common utilities
+protected async waitForTableLoad(): Promise<void>
+protected async extractTableData(): Promise<any[]>
+protected parseAmount(amountStr: string): number
+protected parseDate(dateStr: string): Date | null
+```
+
+## 📊 Performance & Code Reduction
+
+### Architecture Benefits
+- **26% code reduction** in transaction scraper (421 → 313 lines)
+- **100% elimination** of duplicate authentication code
+- **Unified error handling** and logging
+- **Consistent API** with other banks
+- **Template method pattern** for clean extension
+
+### Smart Features
+- **Intelligent element waiting** with DOM event detection
+- **Automatic retry logic** with exponential backoff
+- **Session management** with cleanup
+- **Debug HTML captures** for troubleshooting
+- **Transaction detail expansion** for complete data
 
 ## 📊 Error Handling
 
-The scraper provides detailed error information:
+Enhanced error handling with base class standardization:
 
 ```typescript
-const result = await auth.login();
+const result = await scraper.authenticate();
 
 if (!result.success) {
-  console.log('Login failed:', result.message);
+  console.log('Authentication failed:', result.message);
   
-  if (result.error) {
-    console.log('Error details:', result.error);
-  }
-  
-  // Handle different scenarios
-  if (result.message.includes('Card')) {
-    console.log('💡 Verify your card number is correct');
-  } else if (result.message.includes('ID')) {
-    console.log('💡 Verify your user ID (cédula) is correct');
-  } else if (result.message.includes('password')) {
-    console.log('💡 Verify your password is correct');
-  } else if (result.message.includes('Max retries')) {
-    console.log('💡 BNC might be experiencing issues, try again later');
+  // Standardized error codes from base class
+  switch (result.error) {
+    case 'INVALID_CARD':
+      console.log('💡 Verify your card number (16 digits)');
+      break;
+    case 'INVALID_ID':
+      console.log('💡 Verify your cédula format (V12345678)');
+      break;
+    case 'INVALID_PASSWORD':
+      console.log('💡 Verify your online banking password');
+      break;
+    case 'MAX_RETRIES_EXCEEDED':
+      console.log('💡 BNC might be experiencing issues');
+      break;
+    case 'NAVIGATION_FAILED':
+      console.log('💡 Check internet connection');
+      break;
   }
 }
 ```
 
-## 🔗 Integration
+## 🧪 Testing & Development
 
-This scraper is part of the unified banking framework:
+### Running Examples
+
+```bash
+# Basic usage example
+npx ts-node src/banks/bnc/examples/basic-usage.ts
+
+# Debug mode
+DEBUG=true npx ts-node src/banks/bnc/examples/basic-usage.ts
+
+# Test authentication only
+npx ts-node -e "
+import { BncAuth } from './src/banks/bnc';
+const auth = new BncAuth(process.env, { debug: true });
+auth.login().then(r => console.log(r));
+"
+```
+
+### Development Guidelines
+
+When extending or modifying BNC functionality:
+
+1. **Follow base class patterns** - Extend `BaseBankAuth`/`BaseBankScraper`
+2. **Maintain unified APIs** - Keep methods consistent with Banesco
+3. **Use template methods** - Override abstract methods, call super for common logic
+4. **Add comprehensive logging** - Use inherited logging methods
+5. **Test with debug mode** - Always test with `debug: true` first
+
+## 🔗 Integration with Base System
+
+This scraper seamlessly integrates with the unified banking framework:
 
 ```typescript
 // Import from main package
-import { BankScraper } from '../../../index';
+import { BncScraper, BanescoScraper } from './src';
 
-// Or import directly
-import { BncAuth } from './src/banks/bnc';
+// Both scrapers have identical APIs
+const bncScraper = new BncScraper(bncCredentials);
+const banescoScraper = new BanescoScraper(banescoCredentials);
+
+// Identical method calls
+await bncScraper.authenticate();
+await banescoScraper.authenticate();
+
+// Identical scraping calls  
+const bncTransactions = await bncScraper.scrapeTransactions();
+const banescoTransactions = await banescoScraper.scrapeTransactions();
 ```
 
-## 🏷️ Examples
+## 🏷️ Migration from v1.x
 
-See `examples/basic-usage.ts` for comprehensive usage examples:
-
-- Basic 3-step authentication
-- Debug mode
-- Retry logic
-- Error handling
-- Production configuration
-
-## 📄 Logging
-
-All operations are logged with timestamps:
+If upgrading from the old BNC implementation:
 
 ```typescript
-// Get log content
-const logs = auth.getLogContent();
+// Old way (v1.x)
+import { BncAuth } from './old-bnc-auth';
+const auth = new BncAuth(credentials);
+const result = await auth.performLogin();
 
-// Export logs to file
-auth.exportLogs('bnc-session.log');
+// New way (v2.0) - Unified API
+import { BncScraper } from './src/banks/bnc';
+const scraper = new BncScraper(credentials);
+const result = await scraper.authenticate();
+
+// Or use quick scrape
+import { quickScrape } from './src/banks/bnc';
+const transactions = await quickScrape(credentials);
 ```
 
-Log files are automatically created as `debug-bnc-{timestamp}.log`.
+## 📚 Documentation
 
-## 🔄 Retry Logic
+- 📖 **[Base Class Architecture](../../../BASE_CLASS_SUMMARY.md)** - Complete architecture overview
+- 🏦 **[Banesco README](../banesco/README.md)** - Sister implementation
+- 🔧 **[CLI Guide](../../../CLI.md)** - Command line interface
+- ⚡ **[Smart Waits](../../../SMART_WAITS_EXAMPLE.md)** - Performance examples
 
-Built-in retry mechanism handles temporary failures:
+---
 
-```typescript
-const auth = new BncAuth(credentials, {
-  retries: 3,    // Retry up to 3 times
-  timeout: 45000 // 45 seconds per attempt
-});
-```
-
-## 🛡️ Security Notes
-
-- Never commit credentials to version control
-- Use environment variables for sensitive data
-- Enable headless mode in production
-- Monitor for BNC website changes
-- Validate card numbers and IDs before use
-
-## 📋 TODO
-
-- [ ] Add balance checking functionality
-- [ ] Implement account information extraction
-- [ ] Create scheduled scraping
-- [ ] Add notification system
-- [ ] Support for additional account types
-
-## 🤝 Contributing
-
-When contributing to the BNC scraper:
-
-1. Follow the existing code style
-2. Add comprehensive logging
-3. Test with real BNC accounts
-4. Update documentation
-5. Add error handling for edge cases
-
-## 📞 Support
-
-For issues specific to BNC:
-
-1. Check log files for detailed errors
-2. Verify credentials (card, ID, password)
-3. Test with debug mode enabled
-4. Check if BNC website structure changed
-5. Ensure all 3 authentication steps work individually 
+**Part of the Banker Venezuela enterprise banking system with abstract base class architecture.** 

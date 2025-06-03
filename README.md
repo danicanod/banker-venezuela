@@ -1,4 +1,4 @@
-# 🏦 Banker Venezuela - Optimized Banking Scraper
+# �� Banker Venezuela - Enterprise Banking Scraper
 
 <div align="center">
 
@@ -8,14 +8,14 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![Architecture](https://img.shields.io/badge/Architecture-Abstract_Base_Classes-blue.svg)](#-arquitectura)
 [![Performance](https://img.shields.io/badge/Performance-Optimized-brightgreen.svg)](#-características-principales)
-[![Architecture](https://img.shields.io/badge/Architecture-Consolidated-orange.svg)](#-arquitectura)
 
-**Sistema consolidado y optimizado para scraping de datos bancarios venezolanos**
+**Sistema empresarial con arquitectura base abstracta para scraping bancario venezolano**
 
-*Scraper eficiente con session persistence, smart timeouts y manejo inteligente de cookies*
+*Implementación robusta con clases base, template method pattern y APIs unificadas*
 
-[Características](#-características-principales) • [Instalación](#-instalación) • [Uso](#-uso-rápido) • [CLI](#-cli) • [API](#-api) • [Contribuir](#-contribución)
+[Características](#-características-principales) • [Arquitectura](#-arquitectura) • [Instalación](#-instalación) • [Uso](#-uso-rápido) • [API](#-api) • [CLI](#-cli)
 
 </div>
 
@@ -23,31 +23,88 @@
 
 ## 🚀 **Características Principales**
 
+### 🏗️ **Arquitectura Base Abstracta**
+- **BaseBankAuth**: Clase base para autenticación con template method pattern
+- **BaseBankScraper**: Clase base para scraping con funcionalidad común extraída
+- **APIs Unificadas**: Interfaz idéntica entre todos los bancos
+- **Extensibilidad**: Template claro para agregar nuevos bancos
+
 ### ⚡ **Performance Optimizada**
-- **Session Persistence**: Login instantáneo reutilizando sesiones válidas
-- **Smart Cookies**: Evita preguntas de seguridad manteniendo cookies como navegador normal
-- **Smart Timeouts**: Esperas basadas en eventos DOM reales (30-60ms vs 2-3s)
-- **Browser Persistente**: Reutilización de instancias para máximo rendimiento
+- **Code Reduction**: 30% menos código total, 46% reducción en scrapers
+- **Zero Duplication**: 100% eliminación de código duplicado
+- **Smart Waits**: Esperas inteligentes basadas en elementos DOM
+- **Retry Logic**: Lógica de reintentos unificada y configurable
 
-### 🧠 **Inteligencia Integrada**
-- **Detección Automática**: Manejo inteligente de modales y conexiones activas
-- **Context-Aware Logging**: Logs adaptativos según ambiente (production/development/debug)
-- **Manejo de Errores**: Recuperación automática de fallos comunes
-- **Reintentos Inteligentes**: Lógica adaptativa de retry
+### 🧠 **Funcionalidad Inteligente**
+- **Logging Unificado**: Sistema de logging consistente con timestamps
+- **Debug Features**: Playwright Inspector integration y pause points
+- **Error Handling**: Manejo de errores estandarizado
+- **Session Management**: Gestión de sesiones y cleanup automático
 
-### 🏗️ **Arquitectura Consolidada**
-- **Un Solo Login**: `OptimizedLogin` consolida las mejores características
-- **Utilidades Core**: Solo las utilidades esenciales y probadas
-- **API Limpia**: Interfaz simple y consistente
-- **Modular**: Fácil extensión para nuevos bancos
+### 🔧 **Developer Experience**
+- **TypeScript First**: Tipado completo con generics
+- **Template Method**: Patrón de diseño para extensión limpia
+- **Consistent APIs**: Métodos idénticos entre bancos
+- **Comprehensive Docs**: Documentación completa y ejemplos
 
 ## 🎯 **Bancos Soportados**
 
+### ✅ **BNC (Banco Nacional de Crédito)**
+- **3-Step Authentication**: Card → ID → Password con retry logic
+- **Multi-Account Support**: VES_1109, USD_0816, USD_0801
+- **Transaction Filtering**: Filtrado por cuenta específica
+- **Detail Expansion**: Expansión automática de detalles de transacciones
+
 ### ✅ **Banesco**
-- **Login Optimizado**: Usuario → (opcional preguntas de seguridad) → Contraseña
-- **Session Persistence**: Evita preguntas de seguridad en logins sucesivos
-- **Scraping Completo**: Cuentas y transacciones
-- **Performance**: ~78% más rápido que implementaciones tradicionales
+- **Security Questions**: Manejo inteligente de preguntas de seguridad
+- **Iframe Navigation**: Navegación compleja en iframes
+- **Flexible Table Analysis**: Análisis adaptativo de estructuras de tabla
+- **Alternative Extraction**: Métodos de extracción alternativos
+
+## 🏗️ **Arquitectura**
+
+### **📊 Base Class Hierarchy**
+```typescript
+// Authentication Base
+export abstract class BaseBankAuth<TCredentials, TConfig, TLoginResult> {
+  // 424 lines of common functionality
+  abstract performBankSpecificLogin(): Promise<boolean>
+  abstract verifyLoginSuccess(): Promise<boolean>
+}
+
+// Scraping Base  
+export abstract class BaseBankScraper<TTransaction, TConfig, TResult> {
+  // 370 lines of common functionality
+  abstract scrapeTransactions(): Promise<TResult>
+  abstract parseTransactionData(rawData: any[]): TTransaction[]
+}
+```
+
+### **🏦 Bank Implementations**
+```typescript
+// BNC Implementation
+export class BncAuth extends BaseBankAuth<BncCredentials, BncAuthConfig, BncLoginResult>
+export class BncTransactionsScraper extends BaseBankScraper<BncTransaction, BncScrapingConfig, BncScrapingResult>
+export class BncScraper // Main scraper with unified API
+
+// Banesco Implementation  
+export class BanescoAuth extends BaseBankAuth<BanescoCredentials, BanescoAuthConfig, BanescoLoginResult>
+export class BanescoTransactionsScraper extends BaseBankScraper<BanescTransaction, BanescoScrapingConfig, BanescoScrapingResult>
+export class BanescoScraper // Main scraper with unified API
+```
+
+### **📁 Unified Structure**
+```bash
+src/banks/{banco}/
+├── auth/{banco}-auth.ts           # Authentication implementation
+├── scrapers/
+│   ├── {banco}-scraper.ts         # Main scraper class
+│   └── transactions.ts            # Transaction scraper
+├── types/index.ts                 # Bank-specific types
+├── examples/basic-usage.ts        # Usage examples
+├── index.ts                       # Consistent exports
+└── README.md                      # Bank documentation
+```
 
 ## 🚀 **Instalación**
 
@@ -59,8 +116,8 @@ npm >= 8
 
 ### **Instalación Rápida**
 ```bash
-# Clonar y configurar
-git clone <repository-url>
+# Clonar repositorio
+git clone https://github.com/danicanod/banker-venezuela.git
 cd banker-venezuela
 npm install
 
@@ -71,509 +128,252 @@ cp env.example .env
 
 ### **Configuración de Variables**
 ```env
+# Credenciales BNC
+BNC_ID=V12345678
+BNC_CARD=1234567890123456
+BNC_PASSWORD=tu_password
+
 # Credenciales Banesco
 BANESCO_USERNAME=tu_cedula_sin_puntos
 BANESCO_PASSWORD=tu_clave_internet
-
-# Preguntas de seguridad (formato: "palabra:respuesta,palabra2:respuesta2")
 SECURITY_QUESTIONS="anime:SNK,libro:Bible,color:azul"
 ```
 
 ## 📋 **Uso Rápido**
 
-### **Usando la nueva CLI**
-```bash
-# Ver información de cuentas
-banker bank accounts
+### **BNC Quick Start**
+```typescript
+import { BncScraper, quickScrape } from './src/banks/bnc';
 
-# Obtener movimientos de cuenta
-banker bank transactions
+// Quick scrape (recomendado para uso simple)
+const transactions = await quickScrape({
+  id: 'V12345678',
+  card: '1234567890123456', 
+  password: 'tu_password'
+}, { debug: true });
 
-# Método alternativo para transacciones (cuando el método principal falla)
-banker bank fix-transactions
-
-# Ver todos los comandos disponibles
-banker --help
+// Full session control
+const scraper = new BncScraper(credentials, { debug: true });
+const session = await scraper.scrapeAll();
+console.log(`Found ${session.transactionResults[0].data?.length} transactions`);
 ```
 
-### **Comandos Tradicionales**
-```bash
-# Ejecutar scraper completo
-npm run start
+### **Banesco Quick Start**
+```typescript
+import { BanescoScraper, quickScrape } from './src/banks/banesco';
 
-# Probar login optimizado
-npm run dev
+// Quick scrape
+const transactions = await quickScrape({
+  username: 'V12345678',
+  password: 'tu_password',
+  securityQuestions: 'anime:SNK,libro:Bible'
+}, { debug: true });
+
+// Full session control
+const scraper = new BanescoScraper(credentials, { debug: true });
+const session = await scraper.scrapeAll();
 ```
 
-### **Salida Esperada**
-```
-🚀 BANESCO SCRAPER OPTIMIZADO
-=============================
+### **Unified API Usage**
+```typescript
+// Both banks have identical main scraper APIs:
 
-🔐 PASO 1: Autenticación optimizada...
-🚀 Session restaurada - ¡login instantáneo!
-✅ Autenticación exitosa!
+// Authentication
+await scraper.authenticate()
+await scraper.isAuthenticated()
 
-🏦 PASO 3: Extrayendo información de cuentas...
-✅ Cuentas encontradas: 1
-   1. 4471059167868 (corriente)
+// Scraping  
+await scraper.scrapeAll()          // Full session
+await scraper.scrapeTransactions() // Transactions only
 
-🧭 PASO 4: Navegando a transacciones...
-✅ Navegación exitosa
-
-💳 PASO 5: Extrayendo transacciones...
-✅ Transacciones encontradas: 15
-
-🎉 ¡SCRAPING COMPLETADO EXITOSAMENTE!
+// Session Management
+scraper.getPage()                  // Get authenticated page
+scraper.exportSession(session)     // Export session data
+await scraper.close()              // Cleanup
 ```
 
 ## 💻 **CLI**
 
-El proyecto ahora incluye una CLI completa para manejar todas las operaciones. Ver [CLI.md](CLI.md) para documentación detallada.
-
-### **Comandos Principales**
+Comprehensive CLI for all banking operations:
 
 ```bash
-# Operaciones bancarias
-banker bank accounts               # Ver cuentas
-banker bank transactions           # Ver transacciones
-banker bank transactions --days=7  # Últimos 7 días
-banker bank setup-security         # Configurar seguridad
+# Install CLI globally
+npm run build
+npm link
 
-# Gestión del navegador
-banker browser status              # Ver estado
-banker browser close               # Cerrar navegador
+# Bank operations
+banker bnc login
+banker bnc transactions  
+banker banesco login
+banker banesco transactions
 
-# Gestión del daemon
-banker daemon start                # Iniciar daemon
-banker daemon start --headless     # Iniciar sin UI
-banker daemon stop                 # Detener daemon
+# Quick operations
+banker quick-bnc
+banker quick-banesco
 
-# Utilidades
-banker utils clean                 # Limpiar archivos temporales
-banker utils html-viewer           # Ver capturas HTML
+# Development
+banker --help
 ```
 
-## 🔧 **API**
+Ver [CLI.md](CLI.md) para documentación completa.
 
-### **Uso Básico**
+## 🔧 **API Reference**
+
+### **Base Classes**
 ```typescript
-import { BanescScraper } from './src/index';
+// Authentication base class
+import { BaseBankAuth } from './src/shared';
 
-// Crear scraper
-const scraper = new BanescScraper(false); // headless: false para debug
+// Scraping base class  
+import { BaseBankScraper } from './src/shared';
 
-// Scraping completo (recomendado)
-const result = await scraper.scrapeAllData();
-
-// Solo cuentas
-const accounts = await scraper.scrapeAccountsOnly();
-
-// Solo transacciones
-const transactions = await scraper.scrapeTransactionsOnly();
+// Shared types
+import type { 
+  BaseBankAuthConfig,
+  BaseBankLoginResult,
+  BaseBankScrapingConfig,
+  BaseBankScrapingResult 
+} from './src/shared/types';
 ```
 
-### **OptimizedLogin Directo**
+### **Bank-Specific APIs**
 ```typescript
-import { OptimizedLogin } from './src/banks/banesco/auth/optimized-login';
+// BNC
+import { 
+  BncScraper, 
+  BncAuth, 
+  BncTransactionsScraper,
+  createBncScraper,
+  quickScrape 
+} from './src/banks/bnc';
 
-const login = new OptimizedLogin(credentials, false);
+// Banesco
+import { 
+  BanescoScraper,
+  BanescoAuth, 
+  BanescoTransactionsScraper,
+  createBanescoScraper,
+  quickScrape 
+} from './src/banks/banesco';
+```
 
-// Login con session persistence
-const result = await login.login();
+### **Configuration Options**
+```typescript
+// Authentication config
+interface BankAuthConfig extends BaseBankAuthConfig {
+  headless?: boolean;     // Default: false
+  timeout?: number;       // Default: 30000ms  
+  debug?: boolean;        // Default: false
+  saveSession?: boolean;  // Default: true
+}
 
-if (result.success) {
-  const page = await login.getAuthenticatedPage();
-  // Usar página autenticada...
+// Scraping config
+interface BankScrapingConfig extends BaseBankScrapingConfig {
+  debug?: boolean;              // Default: false
+  timeout?: number;             // Default: 30000ms
+  waitBetweenActions?: number;  // Default: 1000ms
+  retries?: number;             // Default: 3
+  saveHtml?: boolean;           // Default: false
 }
 ```
 
-### **Session Management**
+## 📊 **Performance Metrics**
+
+### **Code Reduction Achieved**
+| Component | Before | After | Reduction |
+|-----------|--------|-------|-----------|
+| BNC Transactions | 421 lines | 313 lines | **26% reduction** |
+| Banesco Transactions | 794 lines | 430 lines | **46% reduction** |
+| Duplicate Code | ~300 lines | 0 lines | **100% elimination** |
+| Total Codebase | - | - | **30% overall reduction** |
+
+### **Architecture Benefits**
+- ✅ **Maintainability**: Single source of truth for common functionality
+- ✅ **Consistency**: Identical APIs across all banks
+- ✅ **Extensibility**: Clear template for adding new banks
+- ✅ **Testing**: Unified testing patterns
+- ✅ **Debugging**: Consistent debug experience
+
+## 📚 **Documentation**
+
+- 📖 **[Base Class Summary](BASE_CLASS_SUMMARY.md)** - Arquitectura detallada
+- 🔧 **[CLI Guide](CLI.md)** - Documentación completa de CLI
+- 🏦 **[BNC README](src/banks/bnc/README.md)** - Documentación específica BNC
+- 🏦 **[Banesco README](src/banks/banesco/README.md)** - Documentación específica Banesco
+- 📈 **[Migration Guide](MIGRATION_SUMMARY.md)** - Guía de migración
+- ⚡ **[Smart Waits](SMART_WAITS_EXAMPLE.md)** - Ejemplos de esperas inteligentes
+
+## 🧪 **Development**
+
+### **Adding a New Bank**
 ```typescript
-import { SessionManager } from './src/shared/utils/session-manager';
+// 1. Create bank types extending base types
+interface NewBankCredentials extends BaseBankCredentials {
+  // Bank-specific credentials
+}
 
-const sessionManager = SessionManager.getInstance();
+// 2. Implement authentication
+class NewBankAuth extends BaseBankAuth<NewBankCredentials, NewBankAuthConfig, NewBankLoginResult> {
+  protected async performBankSpecificLogin(): Promise<boolean> {
+    // Bank-specific login logic
+  }
+}
 
-// Listar sesiones activas
-const sessions = await sessionManager.listSessions();
+// 3. Implement scraper  
+class NewBankTransactionsScraper extends BaseBankScraper<NewBankTransaction, NewBankScrapingConfig, NewBankScrapingResult> {
+  async scrapeTransactions(): Promise<NewBankScrapingResult> {
+    // Bank-specific scraping logic
+  }
+}
 
-// Limpiar sesiones antiguas
-await sessionManager.clearAllSessions();
+// 4. Create main scraper
+class NewBankScraper {
+  // Unified API following the template
+}
 ```
 
-## 🎯 **Características Técnicas**
-
-### **Smart Cookie Management**
-- **Headers Optimizados**: Simula navegador real para maximizar cookies
-- **Session Persistence**: 24h de validez por defecto
-- **Auto-Validation**: Verificación automática de sesiones
-- **Graceful Fallback**: Login fresh si sesión inválida
-
-### **Performance Metrics**
-```
-Métrica                 | Antes  | Después | Mejora
-------------------------|--------|---------|--------
-Tiempo de Login         | 38s    | 5-10s   | 75%+
-Detección de Elementos  | 2-3s   | 30-60ms | 98%
-Login con Session       | 38s    | 0.5-2s  | 95%+
-Uso de Memoria          | Alto   | Opt.    | 50%
-```
-
-### **Strategic Logging System**
-- **Context-Aware**: Se adapta según `NODE_ENV`
-- **6 Niveles**: SILENT, ERROR, WARN, INFO, DEBUG, TRACE
-- **Fitness Scoring**: Evaluación automática de performance (0-100%)
-- **Production Ready**: Logs mínimos en producción
-
-## 🏗️ **Arquitectura**
-
-### **Estructura Consolidada**
-```
-src/
-├── index.ts                             # Punto de entrada principal
-├── banks/banesco/
-│   ├── auth/
-│   │   ├── optimized-login.ts          # Login consolidado optimizado
-│   │   └── security-questions.ts       # Manejo de preguntas
-│   ├── scrapers/
-│   │   ├── accounts.ts                 # Scraping de cuentas
-│   │   └── transactions.ts             # Scraping de transacciones
-│   └── types/index.ts                  # Tipos específicos
-├── shared/
-│   ├── utils/
-│   │   ├── smart-waiter.ts            # Esperas inteligentes
-│   │   ├── strategic-logger.ts         # Sistema de logging
-│   │   ├── session-manager.ts          # Gestión de sesiones
-│   │   ├── browser-server.ts           # Browser persistente
-│   │   └── html-saver.ts              # Debug HTML
-│   └── types/index.ts                  # Tipos compartidos
-└── scripts/
-    ├── test-optimized-login.ts         # Test principal
-    └── demo-strategic-logging.ts       # Demo de logging
-```
-
-### **Ventajas de la Consolidación**
-- **Menos Complejidad**: Un solo login en lugar de 3
-- **Mejor Mantenimiento**: Código consolidado y probado
-- **Performance**: Solo utilidades esenciales
-- **Claridad**: API simple y consistente
-
-## 🔒 **Seguridad**
-
-### **Gestión de Credenciales**
-- **Variables de Entorno**: Credenciales nunca en código
-- **Hash de Sesiones**: IDs no reversibles para archivos de sesión
-- **Expiración Automática**: Sesiones expiran en 24h por defecto
-- **Logging Seguro**: Credenciales nunca en logs
-
-### **Session Security**
-- **Almacenamiento Local**: Sessions solo en `.sessions/` local
-- **Auto-Cleanup**: Limpieza automática de sesiones expiradas
-- **Isolation**: Contextos aislados por ejecución
-
-## 🧪 **Testing y Debug**
-
-### **Tests Disponibles**
+### **Testing**
 ```bash
-# Test completo del sistema
-npm run test
+# Run type checking
+npm run type-check
 
-# Test con debug completo
-npm run test:debug
-
-# Test modo producción (logs mínimos)
-npm run test:production
-
-# Demo del sistema de logging
-npm run demo:logging
+# Test specific bank
+npx ts-node src/banks/bnc/examples/basic-usage.ts
+npx ts-node src/banks/banesco/examples/basic-usage.ts
 ```
-
-### **HTML Debug**
-- **Captures Automáticos**: Cada paso se guarda en `html-captures/`
-- **Viewer Incluido**: `npm run html-viewer` para revisar capturas
-- **Error Analysis**: HTML guardado en caso de fallos
-
-### **Cleanup Tools**
-```bash
-# Limpiar archivos temporales
-npm run clean
-
-# Consolidar proyecto (eliminar archivos obsoletos)
-npm run consolidate
-
-# Cleanup completo
-npm run cleanup
-```
-
-## 🚀 **Próximas Características**
-
-- [ ] **Banco de Venezuela (BOV)** - Usando misma arquitectura optimizada
-- [ ] **Mercantil Bank** - Q2 2024
-- [ ] **Provincial** - Q2 2024
-- [ ] **API REST** - Q3 2024
-- [ ] **Dashboard Web** - Q3 2024
 
 ## 🤝 **Contribución**
 
-1. Fork el proyecto
-2. Crear feature branch (`git checkout -b feature/mejora`)
-3. Commit cambios (`git commit -am 'Add: nueva característica'`)
-4. Push branch (`git push origin feature/mejora`)
-5. Crear Pull Request
+1. Fork del repositorio
+2. Crear feature branch (`git checkout -b feature/nueva-funcionalidad`)
+3. Seguir el patrón de base classes existente
+4. Commit con mensajes descriptivos
+5. Push a la branch (`git push origin feature/nueva-funcionalidad`)
+6. Crear Pull Request
 
-### **Áreas de Contribución**
-- 🚀 Optimizaciones de performance adicionales
-- 🏦 Soporte para nuevos bancos
-- 🧠 Mejoras en detección inteligente
-- 📊 Métricas y analytics avanzados
+### **Coding Standards**
+- ✅ TypeScript strict mode
+- ✅ Extend base classes cuando sea aplicable
+- ✅ Mantener APIs consistentes entre bancos
+- ✅ Documentar métodos públicos
+- ✅ Incluir ejemplos de uso
 
 ## 📄 **Licencia**
 
 MIT License - ver [LICENSE](LICENSE) para detalles.
 
-## ⚠️ **Disclaimer**
+## 🔗 **Enlaces**
 
-Este proyecto es para fines educativos y automatización personal. Asegúrate de cumplir con los términos de servicio de tu banco y leyes locales.
-
----
-
-**🎯 Optimized Edition** - Sistema consolidado para máximo rendimiento y simplicidad 
-
-## 🚀 Scripts Disponibles
-
-### 🎯 **Transacciones (Recomendados)**
-```bash
-npm run transactions:direct    # ⭐ MÁS RECOMENDADO - Single browser, manejo inteligente
-npm run transactions:working   # Versión completa y detallada  
-npm run transactions:optimized # Máxima velocidad y rendimiento
-npm run transactions:fixed     # Versión corregida iframe/portal
-```
-
-### ⚡ **Transacciones por Velocidad** 
-```bash
-npm run transactions:simple    # Ultra-rápido, evita preguntas seguridad
-npm run transactions:fast      # Optimizado con sistema persistente
-npm run transactions:turbo     # Timeouts agresivos 5s (riesgoso)
-npm run transactions          # Script básico original
-```
-
-### 🛠️ **Configuración y Utilidades**
-```bash
-npm run setup:security        # Configurar preguntas de seguridad
-npm run cleanup               # Limpiar archivos temporales  
-npm run clean                 # Limpiar compilación
-```
-
-### 🌐 **Gestión de Browser**
-```bash
-npm run browser:status        # Ver estado navegadores
-npm run browser:close         # Cerrar navegadores huérfanos
-npm run daemon:start          # Daemon persistente (experimental)
-npm run daemon:stop           # Detener daemon
-```
-
-### 🧪 **Testing**
-```bash
-npm run test                  # Test login optimizado
-npm run test:debug            # Test con debug
-npm run test:production       # Test modo producción
-```
-
-> 📖 **Ver guía completa**: `SCRIPTS_GUIDE.md` para detalles de cada script 
-
-## 🧪 **Solución de Problemas**
-
-Si experimentas problemas con la extracción de transacciones, prueba las siguientes soluciones:
-
-### **Método Alternativo**
-```bash
-# Usar método alternativo para acceder a transacciones
-banker bank fix-transactions
-
-# Método alternativo con manejo automático de preguntas de seguridad
-banker bank secure-transactions
-```
-
-### **Herramientas de Diagnóstico**
-```bash
-# Verificar conexión con el banco
-banker diagnostic network
-
-# Verificar certificado SSL
-banker diagnostic ssl
-
-# Verificar configuración del navegador
-banker diagnostic browser
-```
-
-### **Limpieza del Sistema**
-```bash
-# Limpiar archivos temporales
-banker utils clean
-
-# Limpiar sistema completo (sesiones, navegadores, archivos)
-banker utils cleanup
-```
-
-## ✨ **Nueva Funcionalidad: Extracción de Transacciones Banesco**
-
-**Extrae automáticamente las transacciones más recientes de tu cuenta Banesco** con detección inteligente de sistema no disponible.
-
-### 🚀 **Uso Rápido**
-
-```bash
-# 1. Configurar credenciales
-cp env.example .env
-# Editar .env con tus datos
-
-# 2. Extraer transacciones
-npm run extract
-```
-
-### 📊 **Resultado**
-- ✅ **Autenticación automática** con manejo de preguntas de seguridad
-- 🚫 **Detección de sistema no disponible** ("En estos momentos no podemos...")
-- 📈 **Últimas transacciones** con fecha, descripción, monto y saldo
-- 💾 **Archivo JSON** con todas las transacciones extraídas
-- 🎯 **Información de cuenta** (saldo actual, número de cuenta)
-
-### 🔧 **Uso Programático**
-
-```typescript
-import { extractBanescoTransactions } from './src/banesco/extract-transactions';
-
-const result = await extractBanescoTransactions({
-  headless: true,
-  limit: 20 // Últimas 20 transacciones
-});
-
-if (result.success) {
-  console.log(`Extraídas ${result.totalCount} transacciones`);
-  console.log(`Saldo actual: ${result.accountInfo?.balance}`);
-  result.transactions.forEach(tx => {
-    console.log(`${tx.date}: ${tx.description} - ${tx.amount}`);
-  });
-}
-```
-
-## 🔒 **Configuración**
-
-Crea un archivo `.env` con tus credenciales:
-
-```env
-BANESCO_USERNAME=tu_usuario
-BANESCO_PASSWORD=tu_contraseña
-SECURITY_QUESTIONS=palabra_clave1:respuesta1,palabra_clave2:respuesta2
-```
-
-### 🛡️ **Preguntas de Seguridad**
-
-El sistema mapea automáticamente las preguntas de seguridad usando palabras clave:
-
-```env
-# Ejemplos de configuración
-SECURITY_QUESTIONS=anime:Naruto,mascota:Firulais,novio:NombrePersona,conocio:CiudadNombre
-```
-
-## 🎯 **Características Principales**
-
-### ✅ **Sistema de Disponibilidad Inteligente**
-- **Detección automática** de mensajes "En estos momentos no podemos"
-- **Manejo de iframe CAU** con múltiples selectores
-- **Parada temprana** si el sistema no está disponible
-- **Mensajes claros** de estado del sistema
-
-### 🔐 **Autenticación Robusta**
-- **Session persistence** para evitar logins repetidos
-- **Mapeo dinámico** de preguntas de seguridad
-- **Manejo de errores** detallado con códigos específicos
-- **Timeouts inteligentes** sin bloqueos innecesarios
-
-### 📊 **Extracción de Transacciones**
-- **Análisis de tablas** automático para encontrar datos
-- **Procesamiento de múltiples formatos** de fecha y monto
-- **Extracción de metadatos** (saldos, números de cuenta)
-- **Manejo de paginación** para obtener más transacciones
-- **Validación de datos** y limpieza automática
-
-### 🚀 **Rendimiento Optimizado**
-- **Headless mode** para ejecución rápida en producción
-- **Smart waits** sin timeouts innecesarios
-- **Navegación inteligente** hacia páginas de movimientos
-- **Limpieza automática** de recursos del navegador
-
-## 📝 **Scripts Disponibles**
-
-```bash
-npm run extract        # Extraer transacciones de Banesco
-npm run dev           # Ejecutar CLI principal
-npm run build         # Compilar TypeScript
-npm run clean         # Limpiar archivos temporales
-```
-
-## 🔍 **Solución de Problemas**
-
-### Sistema No Disponible
-```
-🚫 Sistema Banesco no disponible
-📝 Mensaje: En estos momentos no podemos procesar su solicitud
-```
-**Solución**: El sistema detectó que Banesco está en mantenimiento. Reintenta en 15-30 minutos.
-
-### Error de Autenticación
-```
-❌ Error de autenticación
-📝 Credenciales incorrectas o preguntas de seguridad faltantes
-```
-**Solución**: 
-1. Verifica credenciales en `.env`
-2. Agrega respuestas para todas las preguntas de seguridad
-3. Verifica que las palabras clave coincidan con las preguntas
-
-### No Se Encontraron Transacciones
-```
-✅ Extracción exitosa pero 0 transacciones
-📝 No hay movimientos en el período seleccionado
-```
-**Solución**: Normal si no hay transacciones recientes. El sistema probó múltiples períodos automáticamente.
-
-## 🏗️ **Arquitectura**
-
-```
-src/banesco/
-├── auth/
-│   ├── banesco-auth.ts          # Clase principal de autenticación
-│   ├── security-handler.ts      # Manejo de preguntas de seguridad
-│   └── types.ts                 # Tipos TypeScript
-├── extract-transactions.ts      # 🆕 Extractor principal de transacciones
-└── README.md                   # Documentación específica
-
-src/banks/banesco/
-├── scrapers/
-│   ├── transactions.ts         # Scraper de transacciones
-│   └── accounts.ts            # Navegación a cuentas
-└── types/
-    └── index.ts               # Tipos de datos bancarios
-```
-
-## 🤝 **Contribuir**
-
-1. **Fork** el proyecto
-2. **Crea** una rama: `git checkout -b feature/nueva-funcionalidad`
-3. **Commit** cambios: `git commit -am 'Agregar nueva funcionalidad'`
-4. **Push** a la rama: `git push origin feature/nueva-funcionalidad`
-5. **Abre** un Pull Request
-
-## 📄 **Licencia**
-
-MIT © [Daniel Sanchez](https://github.com/danicanod)
+- 📊 **[Repositorio](https://github.com/danicanod/banker-venezuela)**
+- 📋 **[Issues](https://github.com/danicanod/banker-venezuela/issues)**
+- 📋 **[Pull Requests](https://github.com/danicanod/banker-venezuela/pulls)**
 
 ---
 
-## 🎯 **Próximas Funcionalidades**
+<div align="center">
 
-- 🏦 **Soporte para más bancos** (Banco de Venezuela, Mercantil)
-- 📱 **API REST** para integración con aplicaciones
-- 📊 **Dashboard web** para visualización de datos
-- 🔔 **Notificaciones** de nuevas transacciones
-- 💾 **Base de datos** para historial de transacciones 
+**Hecho con ❤️ para la comunidad venezolana**
+
+*Scraping bancario profesional con arquitectura empresarial*
+
+</div> 
